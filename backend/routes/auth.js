@@ -1,0 +1,87 @@
+const express = require('express');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const Habit = require('../models/Habit');
+const HabitLog = require('../models/HabitLog');
+const auth = require('../middleware/auth');
+const router = express.Router();
+
+const signToken = (userId) =>
+  jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+router.post('/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password)
+      return res.status(400).json({ message: 'All fields required' });
+    const exists = await User.findOne({ email });
+    if (exists) return res.status(400).json({ message: 'Email already in use' });
+    const user = new User({ name, email, password });
+    await user.save();
+    const token = signToken(user._id);
+    res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+    const token = signToken(user._id);
+    res.json({ token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('-password');
+    res.json({ user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// PUT /api/auth/profile — update display name
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name?.trim()) return res.status(400).json({ message: 'Name required' });
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { name: name.trim() },
+      { new: true }
+    ).select('-password');
+    res.json({ user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// PUT /api/auth/password — change password
+router.put('/password', auth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword)
+      return res.status(400).json({ message: 'Both passwords required' });
+    if (newPassword.length < 6)
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+
+    const user = await User.findById(req.userId);
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) return res.status(400).json({ message: 'Current password is incorrect' });
+
+    user.password = newPassword;
+    await user.save();
+    res.json({ message: 'Password changed successfully' });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// DELETE /api/auth/data — delete all user habits and logs
+router.delete('/data', auth, async (req, res) => {
+  try {
+    await Habit.deleteMany({ userId: req.userId });
+    await HabitLog.deleteMany({ userId: req.userId });
+    res.json({ message: 'All data deleted' });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+module.exports = router;
