@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Flame, Trophy, Zap, ChevronRight } from 'lucide-react';
+import { Plus, ChevronRight, StickyNote } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useWeather } from '../context/WeatherContext';
+import { getWeatherRecommendations } from '../api/weather';
 import api from '../api/client';
 import AddHabitModal from '../components/AddHabitModal';
+import NoteModal from '../components/NoteModal';
+import Onboarding from '../components/Onboarding';
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -23,26 +27,22 @@ function formatDate(d = new Date()) {
   return d.toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
-// Confetti burst component
 function Confetti({ show }) {
   if (!show) return null;
-  const pieces = Array.from({ length: 24 }, (_, i) => i);
-  const colors = ['#52b788', '#d4a853', '#7b9ef4', '#e07070', '#c084fc', '#38bdf8'];
+  const colors = ['#52b788','#d4a853','#7b9ef4','#e07070','#c084fc','#38bdf8'];
   return (
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 99, overflow: 'hidden' }}>
-      {pieces.map(i => {
+      {Array.from({ length: 28 }).map((_, i) => {
         const color = colors[i % colors.length];
-        const left = `${Math.random() * 100}%`;
-        const delay = `${Math.random() * 0.5}s`;
         const size = 6 + Math.random() * 8;
         return (
           <div key={i} style={{
-            position: 'absolute', top: '-20px', left,
+            position: 'absolute', top: '-20px',
+            left: `${Math.random() * 100}%`,
             width: size, height: size,
             background: color,
             borderRadius: Math.random() > 0.5 ? '50%' : '2px',
-            animation: `confettiFall ${1.5 + Math.random()}s ${delay} ease-in forwards`,
-            transform: `rotate(${Math.random() * 360}deg)`,
+            animation: `confettiFall ${1.5 + Math.random()}s ${Math.random() * 0.5}s ease-in forwards`,
           }} />
         );
       })}
@@ -68,10 +68,11 @@ function ProgressRing({ done, total }) {
         <circle cx={cx} cy={cy} r={r} fill="none"
           stroke={pct === 100 ? '#d4a853' : 'var(--primary)'}
           strokeWidth="10" strokeDasharray={circ} strokeDashoffset={offset}
-          strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.6s ease, stroke 0.3s ease' }}
+          strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 0.6s ease, stroke 0.3s ease' }}
         />
       </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <div className="progress-ring-text" style={{ color: pct === 100 ? '#d4a853' : 'var(--primary)', lineHeight: 1 }}>
           {pct === 100 ? '🎉' : `${pct}%`}
         </div>
@@ -81,34 +82,58 @@ function ProgressRing({ done, total }) {
   );
 }
 
-function HabitCard({ habit, completed, streak, onToggle, animating }) {
+function useLongPress(onLongPress, onClick, ms = 500) {
+  const timerRef = useRef(null);
+  const fired = useRef(false);
+  const start = (e) => {
+    fired.current = false;
+    timerRef.current = setTimeout(() => { fired.current = true; onLongPress(e); }, ms);
+  };
+  const cancel = () => { clearTimeout(timerRef.current); };
+  const handleClick = () => { if (!fired.current) onClick(); };
+  return {
+    onMouseDown: start, onMouseUp: cancel, onMouseLeave: cancel,
+    onTouchStart: start, onTouchEnd: cancel,
+    onClick: handleClick,
+  };
+}
+
+function HabitCard({ habit, completed, streak, note, onToggle, onLongPress }) {
+  const handlers = useLongPress(
+    () => onLongPress(habit),
+    () => onToggle(habit._id, !completed)
+  );
   return (
     <div
       className="card flex items-center gap-4 p-4"
       style={{
         cursor: 'pointer',
-        transform: animating ? 'scale(0.98)' : 'scale(1)',
-        transition: 'transform 0.15s, background 0.2s, border-color 0.2s',
         background: completed ? 'var(--primary-pale)' : 'var(--surface)',
         borderColor: completed ? 'var(--primary-light)' : 'var(--border)',
+        transition: 'background 0.2s, border-color 0.2s',
+        userSelect: 'none',
       }}
-      onClick={() => onToggle(habit._id, !completed)}
+      {...handlers}
     >
       <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
            style={{ background: habit.color + '20', border: `1.5px solid ${habit.color}30` }}>
         {habit.emoji}
       </div>
-
       <div className="flex-1 min-w-0">
         <div style={{
           fontWeight: 600, fontSize: 15,
           textDecoration: completed ? 'line-through' : 'none',
-          color: completed ? 'var(--text-muted)' : 'var(--text)'
+          color: completed ? 'var(--text-muted)' : 'var(--text)',
         }}>
           {habit.name}
         </div>
-        <div className="flex items-center gap-2 mt-0.5">
-          {habit.description && (
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          {note && (
+            <span className="flex items-center gap-1" style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+              <StickyNote size={11} /> {note.length > 30 ? note.slice(0, 30) + '…' : note}
+            </span>
+          )}
+          {!note && habit.description && (
             <span style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {habit.description}
             </span>
@@ -120,9 +145,8 @@ function HabitCard({ habit, completed, streak, onToggle, animating }) {
           )}
         </div>
       </div>
-
       <div className={`habit-check ${completed ? 'checked' : ''}`}
-           style={{ borderColor: completed ? habit.color : 'var(--border)', background: completed ? habit.color : 'transparent' }}>
+           style={{ borderColor: completed ? habit.color : 'var(--border)', background: completed ? habit.color : 'transparent', flexShrink: 0 }}>
         {completed && (
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M2.5 7L5.5 10L11.5 4" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -136,14 +160,21 @@ function HabitCard({ habit, completed, streak, onToggle, animating }) {
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Weather
+  const { effect: weatherEffect, tempC, desc: weatherDesc } = useWeather();
+  const weatherRecs = weatherEffect ? getWeatherRecommendations(weatherEffect, tempC) : [];
+
   const [habits, setHabits] = useState([]);
   const [logs, setLogs] = useState({});
+  const [notes, setNotes] = useState({});
   const [stats, setStats] = useState({ currentStreak: 0, bestStreak: 0, totalCompletions: 0, habitStats: [] });
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [animating, setAnimating] = useState(null);
+  const [noteTarget, setNoteTarget] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
-  const prevDoneCount = useRef(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const prevDone = useRef(0);
   const today = getLocalDateStr();
 
   const loadData = useCallback(async () => {
@@ -155,10 +186,17 @@ export default function Dashboard() {
         api.get('/logs/stats'),
       ]);
       setHabits(habitsRes.data);
-      const logMap = {};
-      logsRes.data.forEach(l => { logMap[l.habitId] = l.completed; });
+      const logMap = {}, noteMap = {};
+      logsRes.data.forEach(l => {
+        logMap[l.habitId] = l.completed;
+        if (l.note) noteMap[l.habitId] = l.note;
+      });
       setLogs(logMap);
+      setNotes(noteMap);
       setStats(statsRes.data);
+      if (habitsRes.data.length === 0 && !localStorage.getItem('ht_onboarded')) {
+        setShowOnboarding(true);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -169,40 +207,43 @@ export default function Dashboard() {
   useEffect(() => { loadData(); }, [loadData]);
 
   const handleToggle = async (habitId, completed) => {
-    setAnimating(habitId);
     setLogs(l => ({ ...l, [habitId]: completed }));
     try {
-      await api.post('/logs', { habitId, date: today, completed });
+      await api.post('/logs', { habitId, date: today, completed, note: notes[habitId] || '' });
       const statsRes = await api.get('/logs/stats');
       setStats(statsRes.data);
     } catch {
       setLogs(l => ({ ...l, [habitId]: !completed }));
-    } finally {
-      setTimeout(() => setAnimating(null), 300);
     }
   };
 
   const doneCount = habits.filter(h => logs[h._id]).length;
 
-  // Trigger confetti when all habits completed
   useEffect(() => {
-    if (habits.length > 0 && doneCount === habits.length && prevDoneCount.current < habits.length) {
+    if (habits.length > 0 && doneCount === habits.length && prevDone.current < habits.length) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2500);
     }
-    prevDoneCount.current = doneCount;
+    prevDone.current = doneCount;
   }, [doneCount, habits.length]);
 
-  // Build streak map from stats
   const streakMap = {};
   (stats.habitStats || []).forEach(h => { streakMap[h.id] = h.currentStreak; });
 
   const remaining = habits.length - doneCount;
   const motivationText = habits.length === 0
-    ? 'Add your first habit below'
+    ? 'Add your first habit below 👇'
     : doneCount === habits.length
       ? '🎉 Perfect day! All done!'
       : `${remaining} habit${remaining !== 1 ? 's' : ''} to go`;
+
+  const handleOnboardingDone = () => {
+    localStorage.setItem('ht_onboarded', '1');
+    setShowOnboarding(false);
+    navigate('/habits');
+  };
+
+  if (showOnboarding) return <Onboarding onDone={handleOnboardingDone} />;
 
   if (loading) {
     return (
@@ -222,7 +263,7 @@ export default function Dashboard() {
       <div className="animate-fadeUp">
         <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 2 }}>{formatDate()}</p>
         <h1 style={{ fontSize: 26, marginBottom: 0, lineHeight: 1.2 }}>
-          {getGreeting()},<br/>
+          {getGreeting()},<br />
           <span style={{ color: 'var(--primary)' }}>{user?.name?.split(' ')[0] || 'Friend'}</span> 👋
         </h1>
       </div>
@@ -235,40 +276,51 @@ export default function Dashboard() {
             {motivationText}
           </div>
           <div className="flex gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#fff3e0' }}>
-                <Flame size={16} color="#e07070" />
+            {[
+              { icon: '🔥', val: stats.currentStreak,     label: 'streak', bg: '#fff3e0' },
+              { icon: '🏆', val: stats.bestStreak,         label: 'best',   bg: '#fef9c3' },
+              { icon: '⚡', val: stats.totalCompletions,   label: 'total',  bg: 'var(--primary-pale)' },
+            ].map(({ icon, val, label, bg }) => (
+              <div key={label} className="flex items-center gap-1.5">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm" style={{ background: bg }}>
+                  {icon}
+                </div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>{val}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{label}</div>
+                </div>
               </div>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>{stats.currentStreak}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>streak</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#fef9c3' }}>
-                <Trophy size={16} color="#d4a853" />
-              </div>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>{stats.bestStreak}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>best</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'var(--primary-pale)' }}>
-                <Zap size={16} color="var(--primary)" />
-              </div>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>{stats.totalCompletions}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>total</div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
+      {/* Weather recommendation */}
+      {weatherEffect && weatherRecs.length > 0 && (
+        <div className="card p-4 mt-3 animate-fadeUp flex items-start gap-3"
+             style={{ background: 'var(--surface2)', animationDelay: '0.1s' }}>
+          <span style={{ fontSize: 28, flexShrink: 0 }}>{weatherRecs[0].emoji}</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>
+              {tempC !== null ? `${Math.round(tempC)}° · ` : ''}{weatherDesc}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>
+              {weatherRecs[0].text}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Long-press hint */}
+      {habits.length > 0 && (
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', marginTop: 12, marginBottom: -4 }}>
+          Tap to check in · Hold to add a note
+        </p>
+      )}
+
       {/* Habits list */}
-      <div className="mt-5 flex items-center justify-between mb-3">
-        <h2 style={{ fontSize: 17, margin: 0, fontFamily: 'DM Sans, sans-serif', fontWeight: 700 }}>
+      <div className="mt-4 flex items-center justify-between mb-3">
+        <h2 style={{ fontSize: 17, margin: 0, fontFamily: 'var(--font-body)', fontWeight: 700 }}>
           Today's Habits
         </h2>
         <button onClick={() => navigate('/habits')}
@@ -285,7 +337,7 @@ export default function Dashboard() {
           <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 20 }}>
             Add your first habit to start tracking
           </p>
-          <button className="btn-primary" onClick={() => setShowModal(true)}>+ Add First Habit</button>
+          <button className="btn-primary" onClick={() => navigate('/habits')}>+ Add First Habit</button>
         </div>
       ) : (
         <div className="stagger space-y-3">
@@ -295,8 +347,9 @@ export default function Dashboard() {
                 habit={h}
                 completed={!!logs[h._id]}
                 streak={streakMap[h._id] || 0}
+                note={notes[h._id] || ''}
                 onToggle={handleToggle}
-                animating={animating === h._id}
+                onLongPress={(habit) => setNoteTarget(habit)}
               />
             </div>
           ))}
@@ -307,10 +360,10 @@ export default function Dashboard() {
         <button onClick={() => setShowModal(true)}
           className="flex items-center gap-2 mt-6 mx-auto"
           style={{
-            background: 'var(--primary)', color: 'white',
+            background: 'var(--primary)', color: 'var(--bg)',
             border: 'none', borderRadius: 14, padding: '12px 20px',
             fontSize: 15, fontWeight: 600, cursor: 'pointer',
-            boxShadow: '0 4px 16px rgba(45,106,79,0.35)', display: 'flex'
+            boxShadow: '0 4px 16px rgba(45,106,79,0.35)', display: 'flex',
           }}>
           <Plus size={18} /> Add Habit
         </button>
@@ -320,6 +373,20 @@ export default function Dashboard() {
         <AddHabitModal
           onClose={() => setShowModal(false)}
           onSaved={() => { setShowModal(false); loadData(); }}
+        />
+      )}
+
+      {noteTarget && (
+        <NoteModal
+          habit={noteTarget}
+          date={today}
+          existingNote={notes[noteTarget._id] || ''}
+          onClose={() => setNoteTarget(null)}
+          onSaved={(note) => {
+            setNotes(n => ({ ...n, [noteTarget._id]: note }));
+            if (!logs[noteTarget._id]) setLogs(l => ({ ...l, [noteTarget._id]: true }));
+            setNoteTarget(null);
+          }}
         />
       )}
     </div>

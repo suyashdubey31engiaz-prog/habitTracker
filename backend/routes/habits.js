@@ -3,10 +3,8 @@ const Habit = require('../models/Habit');
 const auth = require('../middleware/auth');
 const router = express.Router();
 
-// All routes protected
 router.use(auth);
 
-// GET /api/habits — get all habits for user
 router.get('/', async (req, res) => {
   try {
     const habits = await Habit.find({ userId: req.userId, isActive: true }).sort('order');
@@ -14,12 +12,10 @@ router.get('/', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// POST /api/habits — create habit
 router.post('/', async (req, res) => {
   try {
     const { name, emoji, color, description, targetDaysPerWeek, targetDays, reminderTime } = req.body;
     if (!name) return res.status(400).json({ message: 'Habit name required' });
-
     const count = await Habit.countDocuments({ userId: req.userId, isActive: true });
     const habit = new Habit({
       userId: req.userId, name, emoji, color, description,
@@ -30,7 +26,20 @@ router.post('/', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// PUT /api/habits/:id — update habit
+// PUT /api/habits/reorder — bulk update order
+// IMPORTANT: this must come BEFORE /:id to avoid "reorder" being treated as an id
+router.put('/reorder', async (req, res) => {
+  try {
+    const { order } = req.body; // [{ id, order }]
+    if (!Array.isArray(order)) return res.status(400).json({ message: 'order array required' });
+
+    await Promise.all(order.map(({ id, order: o }) =>
+      Habit.updateOne({ _id: id, userId: req.userId }, { order: o })
+    ));
+    res.json({ message: 'Reordered' });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 router.put('/:id', async (req, res) => {
   try {
     const habit = await Habit.findOneAndUpdate(
@@ -43,7 +52,6 @@ router.put('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// DELETE /api/habits/:id — soft delete
 router.delete('/:id', async (req, res) => {
   try {
     await Habit.findOneAndUpdate(
