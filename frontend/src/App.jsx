@@ -11,16 +11,18 @@ import MonthlyGrid from './pages/MonthlyGrid';
 import Analytics from './pages/Analytics';
 import ManageHabits from './pages/ManageHabits';
 import Profile from './pages/Profile';
+import AIChat from './pages/AIChat';
+import About from './pages/About';
 import InstallPrompt from './components/InstallPrompt';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg)' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>🌿</div>
-          <div style={{ color: 'var(--text-muted)', fontSize: 15 }}>Loading your habits...</div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'var(--bg)' }}>
+        <div style={{ textAlign:'center' }}>
+          <div style={{ fontSize:40, marginBottom:16 }}>🌿</div>
+          <div style={{ color:'var(--text-muted)', fontSize:15 }}>Loading your habits...</div>
         </div>
       </div>
     );
@@ -33,10 +35,10 @@ function AppRoutes() {
   const { user, loading } = useAuth();
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg)' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>🌿</div>
-          <div style={{ color: 'var(--text-muted)', fontSize: 15 }}>Loading...</div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', background:'var(--bg)' }}>
+        <div style={{ textAlign:'center' }}>
+          <div style={{ fontSize:40, marginBottom:16 }}>🌿</div>
+          <div style={{ color:'var(--text-muted)', fontSize:15 }}>Loading...</div>
         </div>
       </div>
     );
@@ -50,6 +52,8 @@ function AppRoutes() {
       <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
       <Route path="/habits"    element={<ProtectedRoute><ManageHabits /></ProtectedRoute>} />
       <Route path="/profile"   element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/ai"        element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
+      <Route path="/about"     element={<ProtectedRoute><About /></ProtectedRoute>} />
       <Route path="*"          element={<Navigate to="/" replace />} />
     </Routes>
   );

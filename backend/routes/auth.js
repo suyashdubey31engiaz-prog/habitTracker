@@ -19,7 +19,7 @@ router.post('/register', async (req, res) => {
     const user = new User({ name, email, password });
     await user.save();
     const token = signToken(user._id);
-    res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
+    res.status(201).json({ token, user: user.toPublic() });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
@@ -31,51 +31,66 @@ router.post('/login', async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
     const token = signToken(user._id);
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
+    res.json({ token, user: user.toPublic() });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-password');
-    res.json({ user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
+    res.json({ user: user.toPublic() });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// PUT /api/auth/profile — update display name
+// PUT /api/auth/profile — update name
 router.put('/profile', auth, async (req, res) => {
   try {
     const { name } = req.body;
     if (!name?.trim()) return res.status(400).json({ message: 'Name required' });
-    const user = await User.findByIdAndUpdate(
-      req.userId,
-      { name: name.trim() },
-      { new: true }
-    ).select('-password');
-    res.json({ user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
+    const user = await User.findByIdAndUpdate(req.userId, { name: name.trim() }, { new: true });
+    res.json({ user: user.toPublic() });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// PUT /api/auth/password — change password
+// PUT /api/auth/about — update extended profile
+router.put('/about', auth, async (req, res) => {
+  try {
+    const allowed = [
+      'age','gender','dateOfBirth','diet','occupation','occupationDetail',
+      'fitnessLevel','healthGoals','allergies','waterGoal','sleepGoal',
+      'weightKg','heightCm','city','bio'
+    ];
+    const updates = {};
+    allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
+
+    // Mark profile as complete if core fields filled
+    const user = await User.findById(req.userId);
+    const merged = { ...user.toObject(), ...updates };
+    if (merged.age && merged.diet && merged.occupation) updates.profileComplete = true;
+
+    const updated = await User.findByIdAndUpdate(req.userId, updates, { new: true });
+    res.json({ user: updated.toPublic() });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// PUT /api/auth/password
 router.put('/password', auth, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword)
       return res.status(400).json({ message: 'Both passwords required' });
     if (newPassword.length < 6)
-      return res.status(400).json({ message: 'New password must be at least 6 characters' });
-
+      return res.status(400).json({ message: 'Min 6 characters' });
     const user = await User.findById(req.userId);
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) return res.status(400).json({ message: 'Current password is incorrect' });
-
     user.password = newPassword;
     await user.save();
     res.json({ message: 'Password changed successfully' });
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// DELETE /api/auth/data — delete all user habits and logs
+// DELETE /api/auth/data
 router.delete('/data', auth, async (req, res) => {
   try {
     await Habit.deleteMany({ userId: req.userId });
