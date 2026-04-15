@@ -1,4 +1,4 @@
-const CACHE = 'habitual-v2';
+const CACHE = 'habitual-v2';  // bump version to force clear old cache
 const STATIC = ['/', '/index.html'];
 
 self.addEventListener('install', e => {
@@ -20,31 +20,29 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // ✅ KEY FIX: Only handle same-origin requests
-  // Let ALL cross-origin requests (render.com, openweathermap, groq, etc.) pass through untouched
-  if (url.origin !== self.location.origin) {
-    e.respondWith(fetch(e.request));
+  // Never cache API calls
+  if (url.pathname.startsWith('/api') || url.origin !== location.origin) {
+    e.respondWith(fetch(e.request).catch(() => new Response('{"error":"offline"}', {
+      headers: { 'Content-Type': 'application/json' }
+    })));
     return;
   }
 
-  // For same-origin API paths — network only, no cache
-  if (url.pathname.startsWith('/api')) {
+  // For navigation requests (page loads), always serve index.html
+  if (e.request.mode === 'navigate') {
     e.respondWith(
-      fetch(e.request).catch(() =>
-        new Response('{"error":"offline"}', {
-          headers: { 'Content-Type': 'application/json' }
-        })
-      )
+      fetch(e.request).catch(() => caches.match('/index.html'))
     );
     return;
   }
 
-  // For same-origin static assets — cache first, fallback to network
+  // Cache-first for static assets only
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(res => {
-        if (res.ok && res.type !== 'opaque') {
+        // Only cache successful responses
+        if (res.ok) {
           const clone = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
