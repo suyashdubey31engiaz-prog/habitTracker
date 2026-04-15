@@ -1,12 +1,6 @@
-const CACHE = 'habitual-v1';
-const STATIC = [
-  '/',
-  '/index.html',
-  '/src/main.jsx',
-  '/src/index.css',
-];
+const CACHE = 'habitual-v2';
+const STATIC = ['/', '/index.html'];
 
-// Install: cache static shell
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(c => c.addAll(STATIC)).catch(() => {})
@@ -14,7 +8,6 @@ self.addEventListener('install', e => {
   self.skipWaiting();
 });
 
-// Activate: clear old caches
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -24,24 +17,34 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API, cache-first for static assets
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Never cache API calls
-  if (url.pathname.startsWith('/api')) {
-    e.respondWith(fetch(e.request).catch(() => new Response('{"error":"offline"}', {
-      headers: { 'Content-Type': 'application/json' }
-    })));
+  // ✅ KEY FIX: Only handle same-origin requests
+  // Let ALL cross-origin requests (render.com, openweathermap, groq, etc.) pass through untouched
+  if (url.origin !== self.location.origin) {
+    e.respondWith(fetch(e.request));
     return;
   }
 
-  // Cache-first for everything else
+  // For same-origin API paths — network only, no cache
+  if (url.pathname.startsWith('/api')) {
+    e.respondWith(
+      fetch(e.request).catch(() =>
+        new Response('{"error":"offline"}', {
+          headers: { 'Content-Type': 'application/json' }
+        })
+      )
+    );
+    return;
+  }
+
+  // For same-origin static assets — cache first, fallback to network
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(res => {
-        if (res.ok) {
+        if (res.ok && res.type !== 'opaque') {
           const clone = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
