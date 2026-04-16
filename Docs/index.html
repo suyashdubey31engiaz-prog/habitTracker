@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Habitual — Project Documentation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
+:root{
+  --bg:#060d08;--s1:#0a1a0d;--s2:#0f2214;--s3:#132a18;
+  --border:#1a3322;--border2:#24473a;
+  --green:#00ff88;--green-dim:#00cc6a;--green-glow:rgba(0,255,136,.3);
+  --accent:#52b788;--accent2:#74c69d;
+  --gold:#d4a853;--danger:#f08080;
+  --purple:#a78bfa;--blue:#38bdf8;
+  --text:#e0ffe8;--muted:#4a7a5a;--muted2:#6b9e7b;
+  --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.65;overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--green);box-shadow:0 0 8px var(--green)}
+*{scrollbar-width:thin;scrollbar-color:var(--border2) var(--bg)}
+
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(0,255,136,.012) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(0,255,136,.012) 1px,transparent 1px);
+  background-size:52px 52px}
+body::after{content:'';position:fixed;top:-20%;right:-10%;width:60%;height:60%;
+  background:radial-gradient(ellipse,rgba(0,255,136,.025) 0%,transparent 70%);
+  pointer-events:none;z-index:0}
+
+/* ── Layout ── */
+.shell{display:flex;min-height:100vh;position:relative;z-index:1}
+
+/* ── Sidebar ── */
+aside{width:245px;flex-shrink:0;background:rgba(6,13,8,.98);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;backdrop-filter:blur(20px)}
+.sb-logo{padding:20px 16px 14px;border-bottom:1px solid var(--border)}
+.logo-link{text-decoration:none;display:flex;align-items:center;gap:10px;transition:opacity .15s}
+.logo-link:hover{opacity:.82}
+.logo-icon{width:36px;height:36px;border-radius:11px;
+  background:linear-gradient(135deg,#1a3a2a,#2d6a4f);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  box-shadow:0 0 18px rgba(0,255,136,.2);flex-shrink:0}
+.logo-name{font-size:18px;font-weight:800;letter-spacing:-.4px;color:var(--text);font-family:'DM Serif Display',serif}
+.logo-name span{color:var(--green);text-shadow:0 0 12px var(--green-glow)}
+.sb-actions{margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sb-badge{font-size:10px;font-weight:700;font-family:var(--mono);
+  background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.2);
+  color:var(--green);padding:3px 8px;border-radius:5px;white-space:nowrap}
+.live-btn{font-size:10px;font-weight:700;font-family:var(--mono);
+  background:var(--green);color:#060d08;padding:3px 9px;border-radius:5px;
+  text-decoration:none;display:inline-flex;align-items:center;gap:4px;
+  transition:all .15s;white-space:nowrap}
+.live-btn:hover{background:#00ffaa;box-shadow:0 0 14px rgba(0,255,136,.5);transform:translateY(-1px)}
+.live-btn::before{content:'↗';font-size:11px}
+
+.sb-sec{padding:14px 16px 3px;font-size:9.5px;font-weight:700;
+  color:var(--border2);text-transform:uppercase;letter-spacing:.14em}
+aside a{display:flex;align-items:center;gap:9px;padding:7px 16px;
+  font-size:12.5px;color:var(--muted2);text-decoration:none;
+  border-left:2px solid transparent;transition:all .18s}
+aside a:hover{color:var(--green);background:rgba(0,255,136,.04);border-left-color:rgba(0,255,136,.4)}
+aside a.active{color:var(--green);background:rgba(0,255,136,.07);border-left-color:var(--green);font-weight:600}
+aside a .ico{font-size:13px;width:16px;text-align:center;flex-shrink:0}
+
+/* ── Mobile header ── */
+.mob-header{display:none;align-items:center;justify-content:space-between;
+  padding:12px 16px;background:rgba(6,13,8,.98);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;backdrop-filter:blur(20px)}
+.mob-logo{display:flex;align-items:center;gap:8px;text-decoration:none}
+.mob-logo .logo-icon{width:28px;height:28px;font-size:13px}
+.mob-logo .logo-name{font-size:16px;font-weight:800;font-family:'DM Serif Display',serif}
+.hamburger{background:none;border:1px solid var(--border2);border-radius:6px;
+  padding:6px 9px;cursor:pointer;color:var(--text);font-size:15px;line-height:1;transition:all .15s}
+.hamburger:hover{border-color:var(--green);color:var(--green)}
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;backdrop-filter:blur(4px)}
+.mob-drawer{position:fixed;top:0;left:-260px;width:245px;height:100vh;
+  background:rgba(6,13,8,.99);border-right:1px solid var(--border);
+  z-index:201;overflow-y:auto;transition:left .25s cubic-bezier(.4,0,.2,1)}
+.mob-drawer.open{left:0}
+.mob-overlay.open{display:block}
+.mob-close{position:absolute;top:14px;right:14px;background:none;border:none;
+  color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color .15s}
+.mob-close:hover{color:var(--green)}
+
+/* ── Main ── */
+main{flex:1;padding:48px 56px;max-width:960px;min-width:0;position:relative}
+
+/* ── Typography ── */
+h1{font-size:44px;font-weight:900;letter-spacing:-.8px;line-height:1.08;margin-bottom:14px;font-family:'DM Serif Display',serif}
+h1 .accent{color:var(--green);text-shadow:0 0 35px var(--green-glow)}
+h2{font-size:18px;font-weight:800;margin:54px 0 16px;padding-bottom:12px;
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+h2 .ico{font-size:16px}
+h3{font-size:12px;font-weight:700;color:var(--green);margin:24px 0 8px;
+  text-transform:uppercase;letter-spacing:.12em}
+h4{font-size:13px;font-weight:700;color:var(--accent2);margin:14px 0 6px}
+p{color:#8ab89a;margin-bottom:10px;font-size:13.5px;line-height:1.78}
+ul,ol{padding-left:20px;margin-bottom:12px}
+li{color:#7aa48a;font-size:13px;margin-bottom:5px;line-height:1.65}
+li strong{color:var(--text);font-weight:600}
+strong{color:var(--text);font-weight:600}
+code{font-family:var(--mono);font-size:11.5px;background:rgba(0,255,136,.07);
+  color:var(--green);padding:2px 7px;border-radius:4px;border:1px solid rgba(0,255,136,.18)}
+hr{border:none;border-top:1px solid var(--border);margin:36px 0}
+
+/* ── Code blocks ── */
+pre{background:#020806;border:1px solid var(--border);border-radius:11px;
+  padding:18px 22px;overflow-x:auto;margin:12px 0 18px}
+pre code{font-family:var(--mono);font-size:12px;color:#4a7a5a;
+  background:none;border:none;padding:0;line-height:1.85}
+.hl-cmd{color:var(--green)}.hl-key{color:var(--gold)}.hl-val{color:#ffe600}
+.hl-cmt{color:#1a3a2a;font-style:italic}.hl-str{color:var(--accent2)}
+.hl-path{color:var(--blue)}
+
+/* ── Hero ── */
+.hero{padding:0 0 44px;border-bottom:1px solid var(--border);margin-bottom:8px;position:relative}
+.hero-glow{position:absolute;top:-60px;right:-80px;width:420px;height:320px;
+  background:radial-gradient(ellipse,rgba(0,255,136,.04) 0%,transparent 70%);pointer-events:none}
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px}
+.tag{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;
+  border-radius:99px;font-size:10.5px;font-weight:700;border:1px solid}
+.tag.g{color:var(--green);border-color:rgba(0,255,136,.25);background:rgba(0,255,136,.06)}
+.tag.a{color:var(--accent2);border-color:rgba(82,183,136,.25);background:rgba(82,183,136,.06)}
+.tag.b{color:var(--blue);border-color:rgba(56,189,248,.25);background:rgba(56,189,248,.06)}
+.tag.p{color:var(--purple);border-color:rgba(167,139,250,.25);background:rgba(167,139,250,.06)}
+.tag.y{color:var(--gold);border-color:rgba(212,168,83,.25);background:rgba(212,168,83,.06)}
+.tag.r{color:var(--danger);border-color:rgba(240,128,128,.25);background:rgba(240,128,128,.06)}
+.hero-sub{font-size:15.5px;color:#5a8a6a;max-width:640px;line-height:1.75;margin-bottom:26px}
+
+.stats{display:flex;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:0}
+.stat{flex:1;padding:16px;text-align:center;border-right:1px solid var(--border)}
+.stat:last-child{border:none}
+.stat-n{font-size:24px;font-weight:900;color:var(--green);
+  text-shadow:0 0 22px var(--green-glow);line-height:1;font-family:'DM Serif Display',serif}
+.stat-l{font-size:10px;color:var(--muted);margin-top:5px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em}
+
+/* ── Cards ── */
+.card{background:rgba(10,26,13,.75);backdrop-filter:blur(16px);
+  border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin:12px 0;transition:border-color .2s}
+.card:hover{border-color:var(--border2)}
+.card.glow:hover{border-color:rgba(0,255,136,.3);box-shadow:0 0 24px rgba(0,255,136,.06)}
+
+/* ── Info boxes ── */
+.box{border-radius:10px;padding:14px 18px;margin:14px 0;border:1px solid}
+.box p{margin:0;font-size:13px;line-height:1.75}
+.box .bt{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px}
+.box.green{background:rgba(0,255,136,.04);border-color:rgba(0,255,136,.2)}.box.green .bt{color:var(--green)}
+.box.yellow{background:rgba(212,168,83,.04);border-color:rgba(212,168,83,.2)}.box.yellow .bt{color:var(--gold)}
+.box.red{background:rgba(240,128,128,.04);border-color:rgba(240,128,128,.18)}.box.red .bt{color:var(--danger)}
+.box.blue{background:rgba(56,189,248,.04);border-color:rgba(56,189,248,.18)}.box.blue .bt{color:var(--blue)}
+
+/* ── Tables ── */
+table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:12.5px}
+th{background:var(--s2);border:1px solid var(--border);padding:9px 13px;
+  text-align:left;color:var(--green);font-size:10px;text-transform:uppercase;
+  letter-spacing:.09em;font-weight:700}
+td{border:1px solid var(--border);padding:9px 13px;color:#7aa48a;vertical-align:top}
+tr:nth-child(even) td{background:rgba(255,255,255,.012)}
+td code{font-size:11px}
+
+/* ── Tree ── */
+.tree-wrap{background:#020806;border:1px solid var(--border);border-radius:12px;
+  padding:20px 22px;margin:14px 0 20px;overflow-x:auto}
+.tree-root{font-family:var(--mono);font-size:12.5px;line-height:1.9;
+  white-space:nowrap;display:inline-block;min-width:100%}
+.tr{display:flex;align-items:baseline;gap:0;padding:0}
+.tc{color:#1a3a2a;flex-shrink:0;user-select:none;width:max-content;white-space:pre}
+.td{color:#4a7a5a;flex-shrink:0}
+.td.dir{color:var(--green);font-weight:700}
+.td.root-file{color:#5a9a6a}
+.td.new-file{color:var(--gold);font-weight:600}
+.tco{color:#1a3a2a;font-style:italic;font-size:11px;margin-left:10px;white-space:nowrap;flex-shrink:0}
+.tg{margin-left:20px;border-left:1px solid #0f2214;padding-left:0}
+@media(max-width:600px){.tree-root{font-size:11px}.tco{display:none}}
+
+/* ── Schema grid ── */
+.schema-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin:12px 0 20px}
+.sc{background:var(--s2);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;transition:border-color .2s}
+.sc:hover{border-color:rgba(0,255,136,.25)}
+.sc h5{font-size:11.5px;font-weight:700;color:var(--green);margin-bottom:10px;
+  font-family:var(--mono);padding-bottom:6px;border-bottom:1px solid var(--border)}
+.fr{display:flex;justify-content:space-between;align-items:baseline;
+  padding:3px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.fr:last-child{border:none}
+.fn{font-family:var(--mono);font-size:11.5px;color:#4a7a5a}
+.ft{font-size:10.5px;color:var(--muted);font-family:var(--mono)}
+.ft.ref{color:var(--purple)}.ft.ttl{color:var(--gold)}
+
+/* ── Flow steps ── */
+.flow{display:flex;flex-direction:column;margin:14px 0 20px;position:relative}
+.flow::before{content:'';position:absolute;left:13px;top:28px;bottom:28px;
+  width:1px;background:linear-gradient(to bottom,var(--green),transparent);opacity:.25}
+.fl{display:grid;grid-template-columns:28px 1fr;gap:14px;padding:12px 0;position:relative}
+.fl-num{width:26px;height:26px;border-radius:8px;
+  background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.25);
+  color:var(--green);font-size:11px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  margin-top:2px;position:relative;z-index:1}
+.fl-body h5{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:4px}
+.fl-body p{font-size:12.5px;color:var(--muted2);margin:0;line-height:1.7}
+
+/* ── Env items ── */
+.env-item{display:grid;grid-template-columns:200px 1fr;gap:0;
+  border:1px solid var(--border);border-radius:8px;overflow:hidden;
+  margin:5px 0;font-family:var(--mono);font-size:12px}
+.env-item+.env-item{margin-top:6px}
+.ek{background:var(--s2);padding:9px 14px;color:var(--green);
+  border-right:1px solid var(--border);display:flex;align-items:center;word-break:break-all}
+.ev{background:var(--s1);padding:9px 14px;color:var(--muted2);
+  display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ev .note{font-family:'DM Sans',sans-serif;font-size:10.5px;flex-shrink:0}
+.note.req{color:var(--danger)}.note.opt{color:var(--muted)}.note.ai{color:var(--blue)}
+@media(max-width:540px){.env-item{grid-template-columns:1fr}.ek{border-right:none;border-bottom:1px solid var(--border)}}
+
+/* ── Checklist ── */
+.ck{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.ck:last-child{border:none}
+.ckbox{width:20px;height:20px;border:2px solid var(--border2);border-radius:5px;
+  flex-shrink:0;margin-top:1px;background:rgba(0,255,136,.03)}
+.ck p{margin:0;font-size:13px;color:#6a9a7a;line-height:1.6}
+
+/* ── Two col ── */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+@media(max-width:600px){.two{grid-template-columns:1fr}}
+
+/* ── Route pills ── */
+.rt{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:700;
+  padding:2px 7px;border-radius:3px;margin-right:4px}
+.GET{background:rgba(0,255,136,.1);color:var(--green)}
+.POST{background:rgba(56,189,248,.1);color:var(--blue)}
+.PUT{background:rgba(212,168,83,.1);color:var(--gold)}
+.DEL{background:rgba(240,128,128,.1);color:var(--danger)}
+
+/* ── Challenge cards ── */
+.challenges{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin:14px 0}
+.ch{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;transition:border-color .2s}
+.ch:hover{border-color:rgba(0,255,136,.25)}
+.ch-icon{font-size:24px;margin-bottom:8px}
+.ch h5{font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px}
+.ch p{font-size:12px;color:var(--muted2);margin:0;line-height:1.65}
+.ch .fix{font-size:11px;color:var(--green);margin-top:8px;font-weight:600;display:flex;align-items:flex-start;gap:6px}
+.ch .fix::before{content:'✓';flex-shrink:0}
+
+/* ── Theme grid ── */
+.theme-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin:12px 0}
+.theme-chip{border-radius:10px;padding:8px 12px;font-size:12px;font-weight:600;
+  display:flex;align-items:center;gap:6px;border:1px solid}
+
+/* ── Live dot ── */
+.live{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--green);font-weight:700}
+.live::before{content:'';width:6px;height:6px;border-radius:50%;
+  background:var(--green);box-shadow:0 0 6px var(--green);
+  display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+
+/* ── Timeline (journey) ── */
+.timeline{position:relative;margin:16px 0;padding-left:28px}
+.timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;
+  width:2px;background:linear-gradient(to bottom,var(--green),transparent);opacity:.3}
+.tl-item{position:relative;margin-bottom:18px}
+.tl-dot{position:absolute;left:-24px;top:4px;width:10px;height:10px;
+  border-radius:50%;background:var(--green);border:2px solid var(--bg);
+  box-shadow:0 0 8px var(--green)}
+.tl-item h5{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.tl-item p{font-size:12px;color:var(--muted2);margin:0}
+
+/* ── Footer ── */
+footer{color:var(--muted);font-size:12px;text-align:center;padding:36px 0 52px;
+  border-top:1px solid var(--border);margin-top:52px}
+footer a{color:var(--green);text-decoration:none}
+footer a:hover{text-shadow:0 0 8px var(--green)}
+
+/* ── Responsive ── */
+@media(max-width:820px){
+  aside{display:none}.mob-header{display:flex}
+  main{padding:24px 18px}.stats{flex-wrap:wrap}
+  .stat{min-width:calc(33% - 1px)}h1{font-size:30px}
+  .schema-grid{grid-template-columns:1fr}.hero-glow{display:none}
+}
+@media(max-width:480px){.stat{min-width:calc(50% - 1px)}main{padding:18px 14px}}
+</style>
+</head>
+<body>
+
+<!-- MOBILE HEADER -->
+<div class="mob-header">
+  <a href="https://habit-tracker-puce-zeta.vercel.app/" target="_blank" class="mob-logo">
+    <div class="logo-icon">🌿</div>
+    <div class="logo-name">Habitual</div>
+  </a>
+  <button class="hamburger" id="menuBtn">☰</button>
+</div>
+<div class="mob-overlay" id="overlay"></div>
+<div class="mob-drawer" id="drawer">
+  <button class="mob-close" id="closeBtn">✕</button>
+  <div class="sb-logo" style="margin-top:8px">
+    <a href="https://habit-tracker-puce-zeta.vercel.app/" target="_blank" class="logo-link">
+      <div class="logo-icon">🌿</div>
+      <div class="logo-name">Habitual</div>
+    </a>
+    <div class="sb-actions" style="margin-top:8px">
+      <span class="sb-badge">Docs v1.0</span>
+      <a href="https://habit-tracker-puce-zeta.vercel.app/" target="_blank" class="live-btn">Live Demo</a>
+    </div>
+  </div>
+  <div class="sb-sec">Overview</div>
+  <a href="#overview" class="nav-link mob-nav"><span class="ico">🌿</span>What It Is</a>
+  <a href="#journey" class="nav-link mob-nav"><span class="ico">🛤️</span>Build Journey</a>
+  <a href="#stack" class="nav-link mob-nav"><span class="ico">⚙️</span>Tech Stack</a>
+  <div class="sb-sec">Architecture</div>
+  <a href="#folder" class="nav-link mob-nav"><span class="ico">📁</span>Folder Structure</a>
+  <a href="#models" class="nav-link mob-nav"><span class="ico">🗄️</span>DB Models</a>
+  <a href="#routes" class="nav-link mob-nav"><span class="ico">🛣️</span>API Endpoints</a>
+  <div class="sb-sec">Features</div>
+  <a href="#themes" class="nav-link mob-nav"><span class="ico">🎨</span>Themes & Fonts</a>
+  <a href="#weather" class="nav-link mob-nav"><span class="ico">🌤️</span>Weather System</a>
+  <a href="#ai" class="nav-link mob-nav"><span class="ico">🤖</span>AI Coach</a>
+  <a href="#analytics" class="nav-link mob-nav"><span class="ico">📊</span>Analytics</a>
+  <a href="#pwa" class="nav-link mob-nav"><span class="ico">📱</span>PWA & Offline</a>
+  <div class="sb-sec">Setup</div>
+  <a href="#challenges" class="nav-link mob-nav"><span class="ico">⚡</span>Challenges</a>
+  <a href="#env" class="nav-link mob-nav"><span class="ico">🔑</span>Env Variables</a>
+  <a href="#run" class="nav-link mob-nav"><span class="ico">▶️</span>Running Locally</a>
+  <a href="#deploy" class="nav-link mob-nav"><span class="ico">🌐</span>Deployment</a>
+  <a href="#checklist" class="nav-link mob-nav"><span class="ico">✅</span>Checklist</a>
+</div>
+
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside>
+  <div class="sb-logo">
+    <a href="https://habit-tracker-puce-zeta.vercel.app/" target="_blank" class="logo-link">
+      <div class="logo-icon">🌿</div>
+      <div class="logo-name">Habitual</div>
+    </a>
+    <div class="sb-actions">
+      <span class="sb-badge">Docs v1.0</span>
+      <a href="https://habit-tracker-puce-zeta.vercel.app/" target="_blank" class="live-btn">Live Demo</a>
+    </div>
+  </div>
+  <div class="sb-sec">Overview</div>
+  <a href="#overview" class="nav-link"><span class="ico">🌿</span>What It Is</a>
+  <a href="#journey" class="nav-link"><span class="ico">🛤️</span>Build Journey</a>
+  <a href="#stack" class="nav-link"><span class="ico">⚙️</span>Tech Stack</a>
+  <div class="sb-sec">Architecture</div>
+  <a href="#folder" class="nav-link"><span class="ico">📁</span>Folder Structure</a>
+  <a href="#models" class="nav-link"><span class="ico">🗄️</span>DB Models</a>
+  <a href="#routes" class="nav-link"><span class="ico">🛣️</span>API Endpoints</a>
+  <div class="sb-sec">Features</div>
+  <a href="#themes" class="nav-link"><span class="ico">🎨</span>Themes & Fonts</a>
+  <a href="#weather" class="nav-link"><span class="ico">🌤️</span>Weather System</a>
+  <a href="#ai" class="nav-link"><span class="ico">🤖</span>AI Coach</a>
+  <a href="#analytics" class="nav-link"><span class="ico">📊</span>Analytics</a>
+  <a href="#pwa" class="nav-link"><span class="ico">📱</span>PWA & Offline</a>
+  <div class="sb-sec">Setup</div>
+  <a href="#challenges" class="nav-link"><span class="ico">⚡</span>Challenges Faced</a>
+  <a href="#env" class="nav-link"><span class="ico">🔑</span>Env Variables</a>
+  <a href="#run" class="nav-link"><span class="ico">▶️</span>Running Locally</a>
+  <a href="#deploy" class="nav-link"><span class="ico">🌐</span>Deployment</a>
+  <a href="#checklist" class="nav-link"><span class="ico">✅</span>Checklist</a>
+</aside>
+
+<!-- MAIN -->
+<main>
+
+<!-- HERO -->
+<section class="hero" id="overview">
+  <div class="hero-glow"></div>
+  <div class="tag-row">
+    <span class="tag g">MERN Stack</span>
+    <span class="tag b">Groq AI (Llama 3)</span>
+    <span class="tag a">PWA + Offline Sync</span>
+    <span class="tag y">OpenWeatherMap</span>
+    <span class="tag p">Recharts Analytics</span>
+    <span class="tag g"><span class="live"></span>&nbsp;Live on Render + Vercel</span>
+  </div>
+  <h1><span class="accent">Habitual</span></h1>
+  <p class="hero-sub">
+    A full-featured personal wellness and habit tracking app. Build daily habits, visualise streaks and progress with rich charts, get <strong>AI-powered coaching</strong> that knows your health profile, and watch the UI adapt to your <strong>local weather and season</strong> in real time — complete with canvas-rendered weather effects and 17 switchable themes.
+  </p>
+  <div class="stats">
+    <div class="stat"><div class="stat-n">17</div><div class="stat-l">Themes</div></div>
+    <div class="stat"><div class="stat-n">10</div><div class="stat-l">Fonts</div></div>
+    <div class="stat"><div class="stat-n">9</div><div class="stat-l">Pages</div></div>
+    <div class="stat"><div class="stat-n">4</div><div class="stat-l">DB Models</div></div>
+    <div class="stat"><div class="stat-n">20+</div><div class="stat-l">API Routes</div></div>
+    <div class="stat"><div class="stat-n">8</div><div class="stat-l">Chart Types</div></div>
+  </div>
+</section>
+
+<!-- BUILD JOURNEY -->
+<h2 id="journey"><span class="ico">🛤️</span>Build Journey</h2>
+<p>This project started as a simple habit checkbox list and grew iteratively into a full wellness platform. Each phase added a major new capability.</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <h5>Phase 1 — Core MERN Foundation</h5>
+    <p>JWT auth, MongoDB Atlas, habit CRUD, daily check-in with optimistic updates, progress ring, streaks. Basic Layout with bottom nav.</p>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <h5>Phase 2 — Views & Analytics</h5>
+    <p>Weekly bullet journal grid, full monthly checkbox grid, Analytics page with heatmap, bar, line, pie, and radar charts. 28-day data window with Day/Week/Month/Year tabs.</p>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <h5>Phase 3 — Themes, Fonts & Polish</h5>
+    <p>17 CSS-variable themes, 10 Google Font pairings, all saved in localStorage. Card variants per theme (neon glow, aurora animated gradient border, cyberpunk clip-path). Page transition animations on route change.</p>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <h5>Phase 4 — Weather & Seasons</h5>
+    <p>OpenWeatherMap integration, GPS geolocation with IP fallback, canvas weather effects (rain, snow, fog, storm lightning, stars, heat shimmer, frost crystals). Season auto-detection, season particle effects per theme.</p>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <h5>Phase 5 — AI Coach & User Profile</h5>
+    <p>Groq API (free Llama 3 model) powering a context-aware chatbot. 6-step About wizard collecting age, diet, occupation, fitness level, health goals, allergies, BMI. AI uses all profile data + current habits for personalized advice.</p>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <h5>Phase 6 — PWA & Offline Sync</h5>
+    <p>Service worker, web app manifest, installable on Android and iOS. IndexedDB offline queue — writes are stored on device and auto-replayed when network returns. Sync banner with manual sync button.</p>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <h5>Phase 7 — Deploy & Fix</h5>
+    <p>Deployed backend on Render, frontend on Vercel. Fixed production CORS issue (CLIENT_URL mismatch), fixed service worker intercepting cross-origin API calls returning 404, added vercel.json for SPA routing.</p>
+  </div>
+</div>
+
+<!-- TECH STACK -->
+<h2 id="stack"><span class="ico">⚙️</span>Tech Stack</h2>
+<table>
+  <tr><th>Category</th><th>Technology</th><th>Purpose</th></tr>
+  <tr><td><strong>Backend Runtime</strong></td><td>Node.js 18+</td><td>Server-side JavaScript, CommonJS modules</td></tr>
+  <tr><td><strong>Web Framework</strong></td><td>Express.js</td><td>REST API, middleware chain, route handling</td></tr>
+  <tr><td><strong>Database</strong></td><td>MongoDB Atlas + Mongoose</td><td>Cloud-hosted NoSQL — habits, logs, users</td></tr>
+  <tr><td><strong>Auth</strong></td><td>JWT + bcryptjs</td><td>30-day stateless tokens, bcrypt password hashing</td></tr>
+  <tr><td><strong>AI</strong></td><td>Groq API (Llama 3.3)</td><td>Free-tier LLM for chat, tips, food recommendations</td></tr>
+  <tr><td><strong>Weather</strong></td><td>OpenWeatherMap API</td><td>Live weather by GPS coordinates or city name</td></tr>
+  <tr><td><strong>Frontend</strong></td><td>React 18 + Vite</td><td>SPA with fast HMR dev server, optimized build</td></tr>
+  <tr><td><strong>Styling</strong></td><td>Tailwind CSS v3</td><td>Utility classes + custom CSS variable theme system</td></tr>
+  <tr><td><strong>Charts</strong></td><td>Recharts</td><td>Bar, Line, Area, Radar, Pie, Composed charts</td></tr>
+  <tr><td><strong>HTTP Client</strong></td><td>Axios</td><td>JWT interceptor, offline queue, timeout handling</td></tr>
+  <tr><td><strong>Routing</strong></td><td>React Router v6</td><td>SPA client-side routing with protected routes</td></tr>
+  <tr><td><strong>Icons</strong></td><td>Lucide React</td><td>Consistent SVG icon library</td></tr>
+  <tr><td><strong>Offline Storage</strong></td><td>IndexedDB</td><td>Write queue for offline-first sync</td></tr>
+  <tr><td><strong>PWA</strong></td><td>Service Worker + Manifest</td><td>Installable, offline-capable, app-like experience</td></tr>
+  <tr><td><strong>Deploy Backend</strong></td><td>Render</td><td>Auto-deploy from GitHub, free tier, health check keepalive</td></tr>
+  <tr><td><strong>Deploy Frontend</strong></td><td>Vercel</td><td>Auto-deploy, SPA routing via vercel.json rewrite</td></tr>
+</table>
+
+<!-- FOLDER STRUCTURE -->
+<h2 id="folder"><span class="ico">📁</span>Folder Structure</h2>
+<p>Two independent sub-projects in one repo. They communicate over HTTP REST only — no shared code.</p>
+<div class="tree-wrap">
+<div class="tree-root">
+
+<div class="tr"><span class="td dir">FunProject/</span></div>
+<div class="tg">
+
+  <div class="tr"><span class="tc">├── </span><span class="td dir">backend/</span></div>
+  <div class="tg">
+    <div class="tr"><span class="tc">├── </span><span class="td root-file">.env</span><span class="tco">⚠️ secrets — never committed to git</span></div>
+    <div class="tr"><span class="tc">├── </span><span class="td root-file">.env.example</span><span class="tco">safe placeholder template</span></div>
+    <div class="tr"><span class="tc">├── </span><span class="td root-file">server.js</span><span class="tco">Express + MongoDB connection + all routes mounted</span></div>
+    <div class="tr"><span class="tc">├── </span><span class="td root-file">seed.js</span><span class="tco">generates sample habits + 30 days of logs</span></div>
+    <div class="tr"><span class="tc">├── </span><span class="td root-file">package.json</span></div>
+    <div class="tr"><span class="tc">├── </span><span class="td dir">middleware/</span></div>
+    <div class="tg">
+      <div class="tr"><span class="tc">└── </span><span class="td">auth.js</span><span class="tco">JWT protect() — verifies Bearer token on all private routes</span></div>
+    </div>
+    <div class="tr"><span class="tc">├── </span><span class="td dir">models/</span></div>
+    <div class="tg">
+      <div class="tr"><span class="tc">├── </span><span class="td">User.js</span><span class="tco">extended profile: age, diet, occupation, goals, vitals</span></div>
+      <div class="tr"><span class="tc">├── </span><span class="td">Habit.js</span><span class="tco">name, emoji, color, targetDays[], order, isActive</span></div>
+      <div class="tr"><span class="tc">└── </span><span class="td">HabitLog.js</span><span class="tco">habitId, date (local string), completed, note</span></div>
+    </div>
+    <div class="tr"><span class="tc">└── </span><span class="td dir">routes/</span></div>
+    <div class="tg">
+      <div class="tr"><span class="tc">├── </span><span class="td">auth.js</span><span class="tco">register, login, me, profile, about, password, delete-data</span></div>
+      <div class="tr"><span class="tc">├── </span><span class="td">habits.js</span><span class="tco">CRUD + /reorder endpoint (must come before /:id)</span></div>
+      <div class="tr"><span class="tc">├── </span><span class="td">logs.js</span><span class="tco">toggle completion, get range, /stats with streak calc</span></div>
+      <div class="tr"><span class="tc">└── </span><span class="td new-file">ai.js</span><span class="tco">Groq chat, daily tips, food recommendations</span></div>
+    </div>
+  </div>
+
+  <div class="tr" style="margin-top:6px"><span class="tc">└── </span><span class="td dir">frontend/</span></div>
+  <div class="tg">
+    <div class="tr"><span class="tc">├── </span><span class="td root-file">.env</span><span class="tco">⚠️ secrets — never committed to git</span></div>
+    <div class="tr"><span class="tc">├── </span><span class="td root-file">.env.example</span></div>
+    <div class="tr"><span class="tc">├── </span><span class="td root-file">index.html</span><span class="tco">PWA meta, SW registration</span></div>
+    <div class="tr"><span class="tc">├── </span><span class="td root-file">vercel.json</span><span class="tco">SPA rewrite — all routes → index.html</span></div>
+    <div class="tr"><span class="tc">├── </span><span class="td root-file">tailwind.config.js / vite.config.js</span></div>
+    <div class="tr"><span class="tc">├── </span><span class="td dir">public/</span></div>
+    <div class="tg">
+      <div class="tr"><span class="tc">├── </span><span class="td">manifest.json</span><span class="tco">PWA — name, icons, display:standalone</span></div>
+      <div class="tr"><span class="tc">└── </span><span class="td">sw.js</span><span class="tco">service worker — same-origin only intercept</span></div>
+    </div>
+    <div class="tr"><span class="tc">└── </span><span class="td dir">src/</span></div>
+    <div class="tg">
+      <div class="tr"><span class="tc">├── </span><span class="td">App.jsx</span><span class="tco">provider tree + all routes</span></div>
+      <div class="tr"><span class="tc">├── </span><span class="td">index.css</span><span class="tco">CSS vars, animations, card/button/input design system</span></div>
+      <div class="tr"><span class="tc">├── </span><span class="td dir">api/</span></div>
+      <div class="tg">
+        <div class="tr"><span class="tc">├── </span><span class="td">client.js</span><span class="tco">Axios instance + JWT interceptor + offline queue wiring</span></div>
+        <div class="tr"><span class="tc">└── </span><span class="td">weather.js</span><span class="tco">OWM fetch, effect mapping, recommendations, temp labels</span></div>
+      </div>
+      <div class="tr"><span class="tc">├── </span><span class="td dir">context/</span></div>
+      <div class="tg">
+        <div class="tr"><span class="tc">├── </span><span class="td">AuthContext.jsx</span><span class="tco">user state, login/logout, JWT restore on mount</span></div>
+        <div class="tr"><span class="tc">├── </span><span class="td">ThemeContext.jsx</span><span class="tco">17 themes, 10 fonts, season detection, body class mgmt</span></div>
+        <div class="tr"><span class="tc">└── </span><span class="td">WeatherContext.jsx</span><span class="tco">GPS → IP fallback, 30-min cache, effect state</span></div>
+      </div>
+      <div class="tr"><span class="tc">├── </span><span class="td dir">components/</span></div>
+      <div class="tg">
+        <div class="tr"><span class="tc">├── </span><span class="td">Layout.jsx</span><span class="tco">header + bottom nav + season particles + page-enter trigger</span></div>
+        <div class="tr"><span class="tc">├── </span><span class="td">WeatherEffects.jsx</span><span class="tco">canvas rain/snow, SVG frost, fog/storm/star overlays</span></div>
+        <div class="tr"><span class="tc">├── </span><span class="td">AddHabitModal.jsx</span><span class="tco">emoji + color picker, target day selector</span></div>
+        <div class="tr"><span class="tc">├── </span><span class="td">NoteModal.jsx</span><span class="tco">long-press note on completions</span></div>
+        <div class="tr"><span class="tc">├── </span><span class="td">Onboarding.jsx</span><span class="tco">4-step first-run walkthrough</span></div>
+        <div class="tr"><span class="tc">├── </span><span class="td">SyncBanner.jsx</span><span class="tco">offline status chip + manual sync button</span></div>
+        <div class="tr"><span class="tc">└── </span><span class="td">InstallPrompt.jsx</span><span class="tco">beforeinstallprompt (Android) + iOS share hint</span></div>
+      </div>
+      <div class="tr"><span class="tc">├── </span><span class="td dir">pages/</span></div>
+      <div class="tg">
+        <div class="tr"><span class="tc">├── </span><span class="td">Auth.jsx</span><span class="tco">login / sign up split panel with animations</span></div>
+        <div class="tr"><span class="tc">├── </span><span class="td">Dashboard.jsx</span><span class="tco">today view — ring, streaks, weather card, habit cards</span></div>
+        <div class="tr"><span class="tc">├── </span><span class="td">WeeklyView.jsx</span><span class="tco">Mon–Sun bullet journal grid</span></div>
+        <div class="tr"><span class="tc">├── </span><span class="td">MonthlyGrid.jsx</span><span class="tco">full calendar checkbox grid</span></div>
+        <div class="tr"><span class="tc">├── </span><span class="td">Analytics.jsx</span><span class="tco">Day/Week/Month/Year tabs, 8 chart types, heatmap</span></div>
+        <div class="tr"><span class="tc">├── </span><span class="td">ManageHabits.jsx</span><span class="tco">add/edit/delete + HTML5 drag-to-reorder</span></div>
+        <div class="tr"><span class="tc">├── </span><span class="td new-file">AIChat.jsx</span><span class="tco">two-column chat — tips left, wide chat right, voice I/O</span></div>
+        <div class="tr"><span class="tc">├── </span><span class="td new-file">About.jsx</span><span class="tco">6-step health profile wizard with BMI calculator</span></div>
+        <div class="tr"><span class="tc">└── </span><span class="td">Profile.jsx</span><span class="tco">theme gallery, font picker, offline sync, password change</span></div>
+      </div>
+      <div class="tr"><span class="tc">└── </span><span class="td dir">utils/</span></div>
+      <div class="tg">
+        <div class="tr"><span class="tc">└── </span><span class="td">offlineQueue.js</span><span class="tco">IndexedDB CRUD — enqueue/dequeue API write operations</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<!-- DATABASE MODELS -->
+<h2 id="models"><span class="ico">🗄️</span>Database Models</h2>
+<p>4 Mongoose schemas. All include <code>timestamps: true</code> (createdAt, updatedAt).</p>
+<div class="schema-grid">
+  <div class="sc">
+    <h5>User</h5>
+    <div class="fr"><span class="fn">name, email</span><span class="ft">String, required</span></div>
+    <div class="fr"><span class="fn">password</span><span class="ft">bcrypt hash</span></div>
+    <div class="fr"><span class="fn">avatar, timezone</span><span class="ft">String</span></div>
+    <div class="fr"><span class="fn">age, weightKg, heightCm</span><span class="ft">Number</span></div>
+    <div class="fr"><span class="fn">gender</span><span class="ft">male|female|other|prefer_not</span></div>
+    <div class="fr"><span class="fn">diet</span><span class="ft">veg|non_veg|vegan|jain|keto|other</span></div>
+    <div class="fr"><span class="fn">occupation</span><span class="ft">student|working|freelancer…</span></div>
+    <div class="fr"><span class="fn">occupationDetail, city, bio</span><span class="ft">String</span></div>
+    <div class="fr"><span class="fn">fitnessLevel</span><span class="ft">beginner|intermediate|advanced</span></div>
+    <div class="fr"><span class="fn">healthGoals, allergies</span><span class="ft">[String]</span></div>
+    <div class="fr"><span class="fn">waterGoal, sleepGoal</span><span class="ft">Number</span></div>
+    <div class="fr"><span class="fn">profileComplete</span><span class="ft">Boolean</span></div>
+  </div>
+  <div class="sc">
+    <h5>Habit</h5>
+    <div class="fr"><span class="fn">userId</span><span class="ft ref">→ User</span></div>
+    <div class="fr"><span class="fn">name</span><span class="ft">String, required</span></div>
+    <div class="fr"><span class="fn">emoji, color</span><span class="ft">String</span></div>
+    <div class="fr"><span class="fn">description</span><span class="ft">String (optional)</span></div>
+    <div class="fr"><span class="fn">targetDays</span><span class="ft">[Number] 0=Sun…6=Sat</span></div>
+    <div class="fr"><span class="fn">targetDaysPerWeek</span><span class="ft">Number</span></div>
+    <div class="fr"><span class="fn">reminderTime</span><span class="ft">String (HH:MM)</span></div>
+    <div class="fr"><span class="fn">order</span><span class="ft ttl">Number — drag reorder position</span></div>
+    <div class="fr"><span class="fn">isActive</span><span class="ft">Boolean (soft delete)</span></div>
+  </div>
+  <div class="sc">
+    <h5>HabitLog</h5>
+    <div class="fr"><span class="fn">userId</span><span class="ft ref">→ User</span></div>
+    <div class="fr"><span class="fn">habitId</span><span class="ft ref">→ Habit</span></div>
+    <div class="fr"><span class="fn">date</span><span class="ft ttl">String YYYY-MM-DD (local time)</span></div>
+    <div class="fr"><span class="fn">completed</span><span class="ft">Boolean</span></div>
+    <div class="fr"><span class="fn">note</span><span class="ft">String (max 280 chars)</span></div>
+    <div class="fr"><span class="fn">Unique index</span><span class="ft">{userId, habitId, date}</span></div>
+  </div>
+</div>
+<div class="box yellow">
+  <div class="bt">⚠️ Timezone Safety</div>
+  <p>Dates are stored as local-time strings (<code>YYYY-MM-DD</code>) using a <code>getLocalDateStr()</code> helper, never as UTC ISO strings. This prevents the common timezone drift bug where checking in at 11 PM logs to the wrong calendar day.</p>
+</div>
+
+<!-- API ROUTES -->
+<h2 id="routes"><span class="ico">🛣️</span>API Endpoints</h2>
+<p>All routes mounted under <code>/api</code>. 🔒 = requires <code>Authorization: Bearer &lt;token&gt;</code> header.</p>
+
+<h3>Auth — /api/auth</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
+  <tr><td><span class="rt POST">POST</span></td><td><code>/register</code></td><td>—</td><td>Create account → returns JWT + user object</td></tr>
+  <tr><td><span class="rt POST">POST</span></td><td><code>/login</code></td><td>—</td><td>Verify credentials → returns JWT + user object</td></tr>
+  <tr><td><span class="rt GET">GET</span></td><td><code>/me</code></td><td>🔒</td><td>Get own full profile (used on app boot)</td></tr>
+  <tr><td><span class="rt PUT">PUT</span></td><td><code>/profile</code></td><td>🔒</td><td>Update display name</td></tr>
+  <tr><td><span class="rt PUT">PUT</span></td><td><code>/about</code></td><td>🔒</td><td>Save extended health profile — all 13 optional fields</td></tr>
+  <tr><td><span class="rt PUT">PUT</span></td><td><code>/password</code></td><td>🔒</td><td>Change password with current password verification</td></tr>
+  <tr><td><span class="rt DEL">DEL</span></td><td><code>/data</code></td><td>🔒</td><td>Hard delete all habits + logs for this user</td></tr>
+</table>
+
+<h3>Habits — /api/habits</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
+  <tr><td><span class="rt GET">GET</span></td><td><code>/</code></td><td>🔒</td><td>All active habits sorted by <code>order</code> field</td></tr>
+  <tr><td><span class="rt POST">POST</span></td><td><code>/</code></td><td>🔒</td><td>Create habit — auto-assigns next order position</td></tr>
+  <tr><td><span class="rt PUT">PUT</span></td><td><code>/reorder</code></td><td>🔒</td><td>Bulk update order — <code>[{id, order}]</code> array. Must be before <code>/:id</code></td></tr>
+  <tr><td><span class="rt PUT">PUT</span></td><td><code>/:id</code></td><td>🔒</td><td>Update any habit field</td></tr>
+  <tr><td><span class="rt DEL">DEL</span></td><td><code>/:id</code></td><td>🔒</td><td>Soft delete — sets <code>isActive: false</code></td></tr>
+</table>
+
+<h3>Logs — /api/logs</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
+  <tr><td><span class="rt GET">GET</span></td><td><code>/?startDate=&endDate=</code></td><td>🔒</td><td>Get logs in date range — used for weekly/monthly views</td></tr>
+  <tr><td><span class="rt POST">POST</span></td><td><code>/</code></td><td>🔒</td><td>Upsert completion — <code>{habitId, date, completed, note}</code></td></tr>
+  <tr><td><span class="rt GET">GET</span></td><td><code>/stats</code></td><td>🔒</td><td>Returns: currentStreak, bestStreak, totalCompletions, weeklyData (28 days), habitStats (per-habit rates)</td></tr>
+</table>
+
+<h3>AI — /api/ai</h3>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
+  <tr><td><span class="rt POST">POST</span></td><td><code>/chat</code></td><td>🔒</td><td>Send chat history → Groq returns reply. System prompt is built from user profile + habit data.</td></tr>
+  <tr><td><span class="rt POST">POST</span></td><td><code>/tips</code></td><td>🔒</td><td>Returns 3 personalized JSON tips based on profile + weather + season</td></tr>
+  <tr><td><span class="rt POST">POST</span></td><td><code>/food</code></td><td>🔒</td><td>Returns 4 meal recommendations for mealType + weather + season + diet</td></tr>
+</table>
+
+<!-- THEMES & FONTS -->
+<h2 id="themes"><span class="ico">🎨</span>Themes & Fonts</h2>
+<p>All 17 themes use CSS custom properties set on <code>:root</code> by ThemeContext. No CSS class switching — every component references <code>var(--primary)</code>, <code>var(--bg)</code>, etc. Theme persists in localStorage.</p>
+<div class="theme-grid">
+  <div class="theme-chip" style="background:rgba(45,106,79,.15);border-color:rgba(45,106,79,.4);color:#52b788">🌿 Forest</div>
+  <div class="theme-chip" style="background:rgba(15,26,15,.5);border-color:#2d4a2d;color:#74c69d">🌲 Forest Dark</div>
+  <div class="theme-chip" style="background:rgba(231,84,128,.1);border-color:rgba(231,84,128,.3);color:#f4a7bb">🌸 Spring</div>
+  <div class="theme-chip" style="background:rgba(217,119,6,.1);border-color:rgba(217,119,6,.3);color:#f59e0b">☀️ Summer</div>
+  <div class="theme-chip" style="background:rgba(180,83,9,.1);border-color:rgba(180,83,9,.3);color:#d97706">🍂 Autumn</div>
+  <div class="theme-chip" style="background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.3);color:#93c5fd">❄️ Winter</div>
+  <div class="theme-chip" style="background:rgba(56,189,248,.1);border-color:rgba(56,189,248,.3);color:#7dd3fc">🌧️ Monsoon</div>
+  <div class="theme-chip" style="background:rgba(0,119,182,.1);border-color:rgba(0,119,182,.3);color:#48cae4">🌊 Ocean</div>
+  <div class="theme-chip" style="background:rgba(0,255,136,.07);border-color:rgba(0,255,136,.25);color:#00ff88">⚡ Neon</div>
+  <div class="theme-chip" style="background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:#c4b5fd">🌌 Aurora</div>
+  <div class="theme-chip" style="background:rgba(252,238,9,.07);border-color:rgba(252,238,9,.25);color:#fcee09">🤖 Cyberpunk</div>
+  <div class="theme-chip" style="background:rgba(255,107,107,.1);border-color:rgba(255,107,107,.3);color:#ffa07a">🌅 Sunset</div>
+  <div class="theme-chip" style="background:rgba(241,196,15,.07);border-color:rgba(241,196,15,.25);color:#f1c40f">🌙 Midnight</div>
+  <div class="theme-chip" style="background:rgba(247,37,133,.1);border-color:rgba(247,37,133,.3);color:#ff85ae">🍬 Candy</div>
+  <div class="theme-chip" style="background:rgba(194,65,12,.1);border-color:rgba(194,65,12,.3);color:#ea580c">🏜️ Desert</div>
+  <div class="theme-chip" style="background:rgba(3,105,161,.1);border-color:rgba(3,105,161,.3);color:#0ea5e9">🧊 Arctic</div>
+  <div class="theme-chip" style="background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.3);color:#fb923c">🌋 Volcano</div>
+</div>
+
+<h3>Special Theme Effects</h3>
+<div class="two">
+  <div class="card glow">
+    <h4>⚡ Neon</h4>
+    <p>CSS scanline overlay via <code>body.neon-scanlines::after</code>. All interactive elements get <code>--glow</code> box-shadow. Nav icons get <code>drop-shadow</code> filter on active state.</p>
+  </div>
+  <div class="card glow">
+    <h4>🌌 Aurora</h4>
+    <p>Cards use <code>.card-aurora</code> class with an animated gradient border via <code>::before</code> pseudo-element and <code>auroraShift</code> keyframe animation cycling through purple → teal → blue.</p>
+  </div>
+  <div class="card glow">
+    <h4>🤖 Cyberpunk</h4>
+    <p><code>.cyberpunk-card</code> uses <code>clip-path: polygon()</code> for sharp corner cutouts. H1 elements get a <code>glitchShift</code> animation that periodically clips and offsets text.</p>
+  </div>
+  <div class="card glow">
+    <h4>Seasonal Particles</h4>
+    <p>🌸 Spring: sakura petals falling. 🍂 Autumn: orange/brown leaves. ☀️ Summer: animated gradient top bar. All rendered as fixed-position divs in Layout.jsx with CSS keyframe animations.</p>
+  </div>
+</div>
+
+<h3>10 Google Font Pairings</h3>
+<p>Fonts are loaded dynamically by injecting a <code>&lt;link&gt;</code> tag into <code>&lt;head&gt;</code> when the font changes — no page reload needed. CSS variables <code>--font-heading</code> and <code>--font-body</code> are set on <code>:root</code>.</p>
+<table>
+  <tr><th>Key</th><th>Heading</th><th>Body</th><th>Vibe</th></tr>
+  <tr><td><code>classic</code></td><td>DM Serif Display</td><td>DM Sans</td><td>Timeless editorial</td></tr>
+  <tr><td><code>modern</code></td><td>Space Grotesk</td><td>Space Grotesk</td><td>Clean tech</td></tr>
+  <tr><td><code>elegant</code></td><td>Playfair Display</td><td>Lato</td><td>Luxury magazine</td></tr>
+  <tr><td><code>playful</code></td><td>Nunito</td><td>Nunito</td><td>Friendly round</td></tr>
+  <tr><td><code>hacker</code></td><td>JetBrains Mono</td><td>JetBrains Mono</td><td>Terminal dev</td></tr>
+  <tr><td><code>raleway</code></td><td>Raleway</td><td>Raleway</td><td>Geometric premium</td></tr>
+  <tr><td><code>outfit</code></td><td>Outfit</td><td>Outfit</td><td>Modern minimal</td></tr>
+  <tr><td><code>syne</code></td><td>Syne</td><td>DM Sans</td><td>Bold editorial</td></tr>
+  <tr><td><code>bitter</code></td><td>Bitter</td><td>Source Sans Pro</td><td>Reading focused</td></tr>
+  <tr><td><code>quicksand</code></td><td>Quicksand</td><td>Quicksand</td><td>Soft friendly</td></tr>
+</table>
+
+<!-- WEATHER SYSTEM -->
+<h2 id="weather"><span class="ico">🌤️</span>Weather System</h2>
+<div class="flow">
+  <div class="fl">
+    <div class="fl-num">1</div>
+    <div class="fl-body">
+      <h5>Location Detection</h5>
+      <p>WeatherContext tries <code>navigator.geolocation.getCurrentPosition()</code> first. On permission denial, falls back to <code>ipapi.co/json/</code> for city name, then calls OpenWeatherMap by city. Results cached in localStorage for 30 minutes to avoid hammering the free tier limit (1000 calls/day).</p>
+    </div>
+  </div>
+  <div class="fl">
+    <div class="fl-num">2</div>
+    <div class="fl-body">
+      <h5>Effect Mapping</h5>
+      <p>OWM condition codes are mapped to 8 internal effect names: <code>sunny | rain | snow | fog | storm | night | cloudy | clear</code>. Night is triggered when local hour &lt; 6 or ≥ 20. Each effect drives both a canvas/CSS overlay and a set of habit recommendations.</p>
+    </div>
+  </div>
+  <div class="fl">
+    <div class="fl-num">3</div>
+    <div class="fl-body">
+      <h5>Canvas Effects</h5>
+      <p><strong>Rain</strong>: 80 animated line particles on a full-screen canvas. <strong>Snow</strong>: 60 circular flakes with drift. <strong>Storm</strong>: heavy rain (140 particles) + lightning flash overlay that fires randomly every 3–8 seconds with double-flash simulation. <strong>Night</strong>: 40 twinkling star dots positioned in the top 40% of the screen.</p>
+    </div>
+  </div>
+  <div class="fl">
+    <div class="fl-num">4</div>
+    <div class="fl-body">
+      <h5>UI Integration</h5>
+      <p>Temperature chip in the header shows live °C with a comfort-coded colour (blue for cold, green for pleasant, orange for warm, red for hot). Dashboard shows a weather recommendation card with habit suggestions relevant to current conditions. Weather + season context is also passed to the Groq AI for smarter advice.</p>
+    </div>
+  </div>
+</div>
+
+<!-- AI COACH -->
+<h2 id="ai"><span class="ico">🤖</span>AI Coach</h2>
+<p>Powered by <strong>Groq API</strong> (free tier — Llama 3.3 70B model, 6000 tokens/min, 30 req/min). The AI is not generic — it has full context of the user's life built into every system prompt.</p>
+<div class="flow">
+  <div class="fl">
+    <div class="fl-num">1</div>
+    <div class="fl-body">
+      <h5>Dynamic System Prompt</h5>
+      <p>On every chat request, <code>buildSystemPrompt(userId)</code> fetches the user's full profile from MongoDB plus all active habits and their 7-day completion stats. This context is injected into the system prompt — so when you ask "what should I eat today?", the AI knows you're vegetarian, 21 years old, a student in Lucknow, trying to lose weight, and that you only completed 3/7 habits last week.</p>
+    </div>
+  </div>
+  <div class="fl">
+    <div class="fl-num">2</div>
+    <div class="fl-body">
+      <h5>Three Endpoints</h5>
+      <p><strong>/chat</strong> — full conversational AI, last 20 messages sent for context window management. <strong>/tips</strong> — returns 3 personalized JSON tips on page load (parsed from Groq JSON response). <strong>/food</strong> — suggests 4 meals with name, emoji, calorie estimate, prep time, and reason — all respecting dietary restrictions.</p>
+    </div>
+  </div>
+  <div class="fl">
+    <div class="fl-num">3</div>
+    <div class="fl-body">
+      <h5>Voice Input & Output</h5>
+      <p>Voice input uses the <strong>Web Speech API</strong> (<code>webkitSpeechRecognition</code>) with <code>lang=en-IN</code>. Interim results update the input field in real time. On final result, the message is auto-sent. Text-to-speech uses <code>SpeechSynthesisUtterance</code> — clicking the speaker icon reads the last AI reply aloud with natural Indian English intonation.</p>
+    </div>
+  </div>
+  <div class="fl">
+    <div class="fl-num">4</div>
+    <div class="fl-body">
+      <h5>Two-Column Layout</h5>
+      <p>Desktop: sidebar (1fr) on the left shows daily tips as clickable cards and 8 quick-prompt buttons. Chat window (2.2fr) on the right fills the remaining width with the message area at full viewport height. On mobile (&lt;680px) it stacks vertically with chat on top.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ANALYTICS -->
+<h2 id="analytics"><span class="ico">📊</span>Analytics</h2>
+<p>All charts use Recharts. Every chart card animates in with a staggered <code>translateY</code> fade triggered by <code>useEffect</code> on mount. Stat cards animate in sequence with increasing delays.</p>
+<table>
+  <tr><th>Tab</th><th>Charts</th><th>Data Source</th></tr>
+  <tr><td><strong>Day</strong></td><td>Colour-coded bar chart (last 7 days %), Composed chart (bars + line overlay), 28-day GitHub-style heatmap</td><td>weeklyData from /logs/stats</td></tr>
+  <tr><td><strong>Week</strong></td><td>4-week comparison bars, day-of-week performance (best day highlighted), Radar chart (per-habit spider)</td><td>weeklyData grouped by week and DOW</td></tr>
+  <tr><td><strong>Month</strong></td><td>14-day area chart with gradient fill, per-habit progress bars with streak + completion stats</td><td>habitStats from /logs/stats</td></tr>
+  <tr><td><strong>Year</strong></td><td>Month-over-month coloured bar chart, total completions area chart, donut pie chart (habit distribution)</td><td>weeklyData grouped by calendar month</td></tr>
+</table>
+<div class="box green">
+  <div class="bt">💡 Streak Algorithm</div>
+  <p>Streaks are computed server-side in <code>routes/logs.js</code> from the full 28-day window. The algorithm groups logs by date, checks consecutive completion, and also computes per-habit streaks and best-ever streak — all in a single MongoDB query + in-memory pass to avoid N+1 queries.</p>
+</div>
+
+<!-- PWA & OFFLINE -->
+<h2 id="pwa"><span class="ico">📱</span>PWA & Offline Sync</h2>
+<div class="two">
+  <div class="card glow">
+    <h4>📱 Progressive Web App</h4>
+    <ul>
+      <li><code>manifest.json</code> — name, short_name, theme_color, display:standalone</li>
+      <li>Service worker registered on <code>window.load</code></li>
+      <li>Android: Chrome shows native install banner (<code>beforeinstallprompt</code> event)</li>
+      <li>iOS: InstallPrompt detects Safari + not standalone → shows Share → Add to Home Screen instructions</li>
+      <li>App icon on home screen, fullscreen mode, no browser chrome</li>
+    </ul>
+  </div>
+  <div class="card glow">
+    <h4>🔄 Offline Sync</h4>
+    <ul>
+      <li>Axios response interceptor catches network errors on mutations (POST/PUT/DELETE)</li>
+      <li>Failed writes are stored in <strong>IndexedDB</strong> (habitual_offline database)</li>
+      <li><code>window.addEventListener('online')</code> triggers automatic replay</li>
+      <li>SyncBanner polls queue size every 5 seconds</li>
+      <li>Manual "Sync Now" button in Profile for edge cases</li>
+      <li>Fake success returned to caller — UI stays consistent while offline</li>
+    </ul>
+  </div>
+</div>
+<div class="box red">
+  <div class="bt">⚠️ Service Worker Cross-Origin Fix</div>
+  <p>The service worker only intercepts same-origin requests. All cross-origin requests (Render backend, OpenWeatherMap, ipapi.co) are passed through with a direct <code>fetch(e.request)</code> call. This was the root cause of the 404 production login failure — the old SW was intercepting Render API calls and returning cached 404 responses.</p>
+</div>
+
+<!-- CHALLENGES -->
+<h2 id="challenges"><span class="ico">⚡</span>Challenges Faced</h2>
+<div class="challenges">
+  <div class="ch">
+    <div class="ch-icon">🕐</div>
+    <h5>Timezone Date Drift</h5>
+    <p>Using <code>new Date().toISOString()</code> returns UTC time. At 11 PM IST, logging a habit would save to the previous day's date in UTC (+5:30 offset).</p>
+    <div class="fix">Replaced all date handling with a <code>getLocalDateStr()</code> helper using <code>getFullYear()</code>, <code>getMonth()</code>, <code>getDate()</code> — local time, not UTC. Applied everywhere: Dashboard, WeeklyView, MonthlyGrid, and backend stats.</div>
+  </div>
+  <div class="ch">
+    <div class="ch-icon">🌐</div>
+    <h5>Service Worker 404 in Production</h5>
+    <p>The SW was intercepting all fetch events including calls to <code>onrender.com</code>. It had no cached response → returned 404. Login and register both failed silently on Vercel.</p>
+    <div class="fix">Added <code>if (url.origin !== self.location.origin) { fetch(e.request); return; }</code> — only same-origin requests are handled by the SW now. Cross-origin passes straight through.</div>
+  </div>
+  <div class="ch">
+    <div class="ch-icon">🔒</div>
+    <h5>CORS in Production</h5>
+    <p>Backend was configured with <code>origin: CLIENT_URL</code>. When Vercel URL wasn't exactly matching (trailing slash, wrong URL), all requests were blocked with CORS error.</p>
+    <div class="fix">Updated server.js to check <code>origin.startsWith(CLIENT_URL)</code> and added an explicit allowed origins array covering both localhost variants. Set CLIENT_URL precisely in Render env vars.</div>
+  </div>
+  <div class="ch">
+    <div class="ch-icon">🔁</div>
+    <h5>Habit Reorder Route Conflict</h5>
+    <p>Express was matching <code>PUT /api/habits/reorder</code> against the <code>PUT /api/habits/:id</code> route — treating the string "reorder" as a MongoDB ObjectId, causing a CastError.</p>
+    <div class="fix">Moved the <code>/reorder</code> route handler above the <code>/:id</code> handler in habits.js. Express routes match in declaration order — specific paths must always precede parameterised ones.</div>
+  </div>
+  <div class="ch">
+    <div class="ch-icon">⚡</div>
+    <h5>Groq Rate Limit Errors</h5>
+    <p>Free tier has a 6000 tokens/minute cap. Long system prompts with full habit context were consuming most of the budget per request, causing 429 errors on rapid successive messages.</p>
+    <div class="fix">Truncated chat history to last 20 messages only. Added hardcoded fallback tips array so the /tips endpoint degrades gracefully. Added error boundary in AIChat.jsx showing a friendly retry message.</div>
+  </div>
+  <div class="ch">
+    <div class="ch-icon">🎨</div>
+    <h5>Neon Scanlines Not Global</h5>
+    <p>The neon scanline effect was added to <code>document.body</code> inside Profile.jsx render — it only applied while on the Profile page and disappeared on navigation.</p>
+    <div class="fix">Moved all body class management (neon-scanlines, cyberpunk-glitch, theme-winter, etc.) into the <code>useEffect</code> inside ThemeContext.jsx so it fires on every theme change and applies globally regardless of current page.</div>
+  </div>
+  <div class="ch">
+    <div class="ch-icon">📱</div>
+    <h5>Render Free Tier Cold Starts</h5>
+    <p>Render's free tier spins down after 15 minutes of inactivity. First request after sleep takes 30–50 seconds, causing the login to time out on Axios's 8-second timeout setting.</p>
+    <div class="fix">Added a <code>/api/health</code> endpoint. Registered the backend URL on UptimeRobot (free) to ping every 5 minutes — keeps the server warm 24/7 without any paid plan.</div>
+  </div>
+  <div class="ch">
+    <div class="ch-icon">🔄</div>
+    <h5>N+1 Query in Stats Endpoint</h5>
+    <p>Early version of <code>/logs/stats</code> ran a separate MongoDB query for each habit to compute its streak, causing 6–10 DB round trips per stats call.</p>
+    <div class="fix">Replaced with a single <code>HabitLog.find()</code> covering the full 28-day window, then grouped results in-memory by habitId using a JavaScript reduce. One DB query total regardless of habit count.</div>
+  </div>
+</div>
+
+<!-- ENV VARIABLES -->
+<h2 id="env"><span class="ico">🔑</span>Environment Variables</h2>
+<div class="box red">
+  <div class="bt">🔒 Security — Read This First</div>
+  <p>Both <code>.env</code> files are in <code>.gitignore</code> and are <strong>never committed to Git</strong>. When deploying, add these as environment variables directly in the Render and Vercel dashboards. Never hardcode secrets in source files. Rotate keys immediately if they are ever accidentally exposed.</p>
+</div>
+
+<h3>Backend — backend/.env</h3>
+<div class="env-item"><span class="ek">MONGO_URI</span><div class="ev">mongodb+srv://&lt;user&gt;:&lt;pass&gt;@cluster0.xxxxx.mongodb.net/habittracker<span class="note req">required</span></div></div>
+<div class="env-item"><span class="ek">JWT_SECRET</span><div class="ev">Any 32+ char random string — signs all auth tokens<span class="note req">required</span></div></div>
+<div class="env-item"><span class="ek">PORT</span><div class="ev">5000 — or let Render assign it automatically<span class="note opt">optional</span></div></div>
+<div class="env-item"><span class="ek">CLIENT_URL</span><div class="ev">Your Vercel frontend URL — used for CORS origin check<span class="note req">required</span></div></div>
+<div class="env-item"><span class="ek">GROQ_API_KEY</span><div class="ev">From console.groq.com — free, no credit card needed<span class="note ai">for AI</span></div></div>
+
+<h3>Frontend — frontend/.env</h3>
+<p>All Vite env vars must start with <code>VITE_</code> — only those are exposed to browser code.</p>
+<div class="env-item"><span class="ek">VITE_API_URL</span><div class="ev">http://localhost:5000/api (dev) or https://your-app.onrender.com/api (prod)<span class="note req">required</span></div></div>
+<div class="env-item"><span class="ek">VITE_WEATHER_KEY</span><div class="ev">From openweathermap.org/api — free 1000 calls/day<span class="note ai">for weather</span></div></div>
+
+<div class="box blue">
+  <div class="bt">💡 Where to Get Free Keys</div>
+  <p><strong>MongoDB Atlas</strong>: mongodb.com/atlas → free M0 cluster (512 MB) &nbsp;·&nbsp;
+  <strong>Groq</strong>: console.groq.com → free, 6000 tokens/min &nbsp;·&nbsp;
+  <strong>OpenWeatherMap</strong>: openweathermap.org/api → free 1000 calls/day (key activates in ~10 min)</p>
+</div>
+
+<!-- RUNNING LOCALLY -->
+<h2 id="run"><span class="ico">▶️</span>Running Locally</h2>
+<pre><code><span class="hl-cmt"># 1. Clone the repository</span>
+<span class="hl-cmd">git clone</span> https://github.com/your-username/FunProject.git
+<span class="hl-cmd">cd</span> FunProject
+
+<span class="hl-cmt"># 2. Backend setup</span>
+<span class="hl-cmd">cd</span> backend
+<span class="hl-cmd">npm install</span>
+<span class="hl-cmt"># Create .env with MONGO_URI, JWT_SECRET, GROQ_API_KEY, CLIENT_URL</span>
+<span class="hl-cmd">npm run dev</span>
+<span class="hl-cmt"># ✅ MongoDB Atlas connected</span>
+<span class="hl-cmt"># 🚀 Backend ready on http://localhost:5000</span>
+
+<span class="hl-cmt"># 3. Frontend setup (new terminal)</span>
+<span class="hl-cmd">cd</span> ../frontend
+<span class="hl-cmd">npm install</span>
+<span class="hl-cmt"># Create .env with VITE_API_URL=http://localhost:5000/api and VITE_WEATHER_KEY</span>
+<span class="hl-cmd">npm run dev</span>
+<span class="hl-cmt"># App running at http://localhost:5173</span>
+
+<span class="hl-cmt"># 4. (Optional) Seed sample habits + 30 days of log data</span>
+<span class="hl-cmd">cd</span> backend
+<span class="hl-cmt"># Open seed.js and set TARGET_EMAIL to your registered email first</span>
+<span class="hl-cmd">node seed.js</span>           <span class="hl-cmt"># creates 6 habits + 30 days of logs</span>
+<span class="hl-cmd">node seed.js --clear</span>   <span class="hl-cmt"># removes seeded data</span></code></pre>
+
+<!-- DEPLOYMENT -->
+<h2 id="deploy"><span class="ico">🌐</span>Deployment</h2>
+<div class="two">
+  <div class="card glow">
+    <h4>Backend → Render (Free)</h4>
+    <ul>
+      <li>New Web Service → connect GitHub repo</li>
+      <li>Root Directory: <code>backend</code></li>
+      <li>Build Command: <code>npm install</code></li>
+      <li>Start Command: <code>node server.js</code></li>
+      <li>Add all 5 env vars in the Environment tab</li>
+      <li>Copy the deploy URL (e.g. <code>https://habitual-backend-xxxx.onrender.com</code>)</li>
+      <li>Register on UptimeRobot to ping <code>/api/health</code> every 5 min — prevents cold starts</li>
+    </ul>
+  </div>
+  <div class="card glow">
+    <h4>Frontend → Vercel (Free)</h4>
+    <ul>
+      <li>New Project → import GitHub repo</li>
+      <li>Root Directory: <code>frontend</code></li>
+      <li>Framework Preset: <code>Vite</code> (auto-detected)</li>
+      <li>Add <code>VITE_API_URL</code> = your Render URL + <code>/api</code></li>
+      <li>Add <code>VITE_WEATHER_KEY</code></li>
+      <li><code>vercel.json</code> already in repo — rewrites all routes to <code>index.html</code></li>
+      <li><strong>After deploy:</strong> update <code>CLIENT_URL</code> on Render to match Vercel URL, then trigger Render redeploy</li>
+    </ul>
+  </div>
+</div>
+
+<div class="box yellow">
+  <div class="bt">⚠️ Important Order</div>
+  <p>Deploy backend first → copy the Render URL → set it in Vercel env vars → deploy frontend → copy the Vercel URL → update CLIENT_URL on Render → Render redeploys. If CLIENT_URL doesn't match exactly, CORS blocks all requests. No trailing slashes.</p>
+</div>
+
+<!-- CHECKLIST -->
+<h2 id="checklist"><span class="ico">✅</span>Setup Checklist</h2>
+<h3>Accounts & Keys</h3>
+<div class="ck"><div class="ckbox"></div><p>MongoDB Atlas — free cluster created, database user added, Network Access set to <code>0.0.0.0/0</code>, connection string in hand</p></div>
+<div class="ck"><div class="ckbox"></div><p>Groq — account created at console.groq.com, API key generated and saved</p></div>
+<div class="ck"><div class="ckbox"></div><p>OpenWeatherMap — account created, API key activated (wait 10 minutes after generating)</p></div>
+
+<h3>Local Development</h3>
+<div class="ck"><div class="ckbox"></div><p>Both <code>.env</code> files created with all required keys filled in (not the example file)</p></div>
+<div class="ck"><div class="ckbox"></div><p><code>npm install</code> run in both <code>backend/</code> and <code>frontend/</code> folders</p></div>
+<div class="ck"><div class="ckbox"></div><p>Backend starts: <code>npm run dev</code> prints <em>MongoDB Atlas connected</em> and <em>Backend ready on port 5000</em></p></div>
+<div class="ck"><div class="ckbox"></div><p>Frontend starts: <code>npm run dev</code> opens at localhost:5173 with no console errors</p></div>
+<div class="ck"><div class="ckbox"></div><p>Register a new account → login redirects to dashboard ✓</p></div>
+<div class="ck"><div class="ckbox"></div><p>Add a habit → check it off → streak counter increments ✓</p></div>
+<div class="ck"><div class="ckbox"></div><p>Analytics page shows charts after a few days of data ✓</p></div>
+<div class="ck"><div class="ckbox"></div><p>AI chat page loads and responds (voice input works in Chrome) ✓</p></div>
+<div class="ck"><div class="ckbox"></div><p>Weather chip shows in header + rain/snow canvas effects visible ✓</p></div>
+<div class="ck"><div class="ckbox"></div><p>Profile page theme gallery — clicking a theme changes the entire app instantly ✓</p></div>
+
+<h3>Deployment</h3>
+<div class="ck"><div class="ckbox"></div><p>Backend deployed on Render — <code>https://your-app.onrender.com/api/health</code> returns <code>{"status":"ok"}</code></p></div>
+<div class="ck"><div class="ckbox"></div><p>Frontend deployed on Vercel — <code>VITE_API_URL</code> points to Render URL + <code>/api</code> (no trailing slash)</p></div>
+<div class="ck"><div class="ckbox"></div><p>Render <code>CLIENT_URL</code> updated to Vercel URL (no trailing slash) — backend redeployed after change</p></div>
+<div class="ck"><div class="ckbox"></div><p>UptimeRobot pinging <code>/api/health</code> every 5 minutes to prevent cold starts</p></div>
+<div class="ck"><div class="ckbox"></div><p>Full flow tested on live URLs: register → login → add habit → check in → view analytics ✓</p></div>
+<div class="ck"><div class="ckbox"></div><p>No <code>.env</code> files in git history — run <code>git log --all --full-history -- "**/.env"</code> to verify</p></div>
+
+<footer>
+  Made by <strong>Suyash Dubey</strong> &nbsp;·&nbsp;
+  <a href="https://github.com/SuyashDubey31ENGIAZ-prog" target="_blank">GitHub</a>
+  &nbsp;·&nbsp;
+  <a href="https://www.linkedin.com/in/vicck" target="_blank">LinkedIn</a>
+  &nbsp;·&nbsp;
+  <a href="https://suyash-portfolio-2026.vercel.app/" target="_blank">Portfolio</a>
+  &nbsp;·&nbsp;
+  <a href="https://habit-tracker-puce-zeta.vercel.app/" target="_blank">Live Demo ↗</a>
+  <br/><br/>
+  <span style="color:#0f2214;font-size:11px">Built with Node.js · Express · MongoDB · React 18 · Groq AI · Recharts · Tailwind · OpenWeatherMap</span>
+</footer>
+
+</main>
+</div>
+
+<script>
+const allLinks = document.querySelectorAll('.nav-link');
+function setActive(href) {
+  allLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === href));
+}
+allLinks.forEach(link => {
+  link.addEventListener('click', function() {
+    setActive(this.getAttribute('href'));
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+  });
+});
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) setActive('#' + e.target.id); });
+}, { rootMargin: '-20% 0px -70% 0px' });
+document.querySelectorAll('main [id]').forEach(el => observer.observe(el));
+
+const menuBtn = document.getElementById('menuBtn');
+const closeBtn = document.getElementById('closeBtn');
+const drawer = document.getElementById('drawer');
+const overlay = document.getElementById('overlay');
+menuBtn.addEventListener('click', () => { drawer.classList.add('open'); overlay.classList.add('open'); });
+closeBtn.addEventListener('click', () => { drawer.classList.remove('open'); overlay.classList.remove('open'); });
+overlay.addEventListener('click', () => { drawer.classList.remove('open'); overlay.classList.remove('open'); });
+</script>
+</body>
+</html>
