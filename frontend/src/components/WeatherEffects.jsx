@@ -2,6 +2,16 @@ import { useEffect, useRef } from 'react';
 import { useWeather } from '../context/WeatherContext';
 import { useTheme } from '../context/ThemeContext';
 
+// Shared canvas style — pointerEvents:none so clicks pass through,
+// touchAction:pan-y so vertical scroll is never blocked on mobile.
+const CANVAS_STYLE = {
+  position: 'fixed',
+  inset: 0,
+  pointerEvents: 'none',
+  touchAction: 'pan-y',   // ← FIX: lets vertical scroll pass through on mobile
+  zIndex: 9990,
+};
+
 // Rain canvas
 function RainCanvas({ intensity = 80 }) {
   const canvasRef = useRef(null);
@@ -41,12 +51,7 @@ function RainCanvas({ intensity = 80 }) {
     return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); };
   }, [intensity]);
 
-  return (
-    <canvas ref={canvasRef} style={{
-      position: 'fixed', inset: 0, pointerEvents: 'none',
-      zIndex: 9990, opacity: 0.7,
-    }} />
-  );
+  return <canvas ref={canvasRef} style={{ ...CANVAS_STYLE, opacity: 0.7 }} />;
 }
 
 // Snow canvas
@@ -86,18 +91,14 @@ function SnowCanvas() {
     return () => cancelAnimationFrame(animId);
   }, []);
 
-  return (
-    <canvas ref={canvasRef} style={{
-      position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9990,
-    }} />
-  );
+  return <canvas ref={canvasRef} style={{ ...CANVAS_STYLE }} />;
 }
 
 // Fog overlay
 function FogOverlay() {
   return (
     <div style={{
-      position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9989,
+      position: 'fixed', inset: 0, pointerEvents: 'none', touchAction: 'pan-y', zIndex: 9989,
       background: 'linear-gradient(180deg, rgba(200,210,220,0.18) 0%, rgba(180,195,210,0.08) 100%)',
       backdropFilter: 'blur(0.5px)',
       animation: 'fogDrift 12s ease-in-out infinite alternate',
@@ -116,9 +117,8 @@ function FogOverlay() {
 function FrostOverlay() {
   return (
     <div style={{
-      position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9989,
+      position: 'fixed', inset: 0, pointerEvents: 'none', touchAction: 'pan-y', zIndex: 9989,
     }}>
-      {/* Corner frost crystals */}
       {[
         { top: 0, left: 0, transform: 'none' },
         { top: 0, right: 0, transform: 'scaleX(-1)' },
@@ -134,11 +134,7 @@ function FrostOverlay() {
           <line x1="20" y1="0" x2="50" y2="40" stroke="rgba(180,220,255,0.5)" strokeWidth="0.5"/>
         </svg>
       ))}
-      {/* Subtle icy blue tint */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'rgba(180,220,255,0.04)',
-      }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(180,220,255,0.04)' }} />
     </div>
   );
 }
@@ -152,7 +148,6 @@ function StormOverlay() {
       flashRef.current.style.opacity = '0.15';
       setTimeout(() => {
         if (flashRef.current) flashRef.current.style.opacity = '0';
-        // Double flash
         setTimeout(() => {
           if (flashRef.current) flashRef.current.style.opacity = '0.1';
           setTimeout(() => { if (flashRef.current) flashRef.current.style.opacity = '0'; }, 80);
@@ -169,13 +164,12 @@ function StormOverlay() {
     <>
       <RainCanvas intensity={140} />
       <div ref={flashRef} style={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9991,
+        position: 'fixed', inset: 0, pointerEvents: 'none', touchAction: 'pan-y', zIndex: 9991,
         background: 'white', opacity: 0,
         transition: 'opacity 0.05s',
       }} />
-      {/* Dark dramatic overlay */}
       <div style={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9988,
+        position: 'fixed', inset: 0, pointerEvents: 'none', touchAction: 'pan-y', zIndex: 9988,
         background: 'rgba(10,10,30,0.25)',
       }} />
     </>
@@ -186,7 +180,7 @@ function StormOverlay() {
 function SunnyOverlay() {
   return (
     <div style={{
-      position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9989,
+      position: 'fixed', inset: 0, pointerEvents: 'none', touchAction: 'pan-y', zIndex: 9989,
       background: 'linear-gradient(180deg, rgba(255,200,50,0.04) 0%, transparent 40%)',
       animation: 'heatShimmer 4s ease-in-out infinite',
     }}>
@@ -210,7 +204,7 @@ function NightOverlay() {
   }));
 
   return (
-    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9989 }}>
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', touchAction: 'pan-y', zIndex: 9989 }}>
       {stars.map((s, i) => (
         <div key={i} style={{
           position: 'absolute',

@@ -9,14 +9,31 @@ const router = express.Router();
 const signToken = (userId) =>
   jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
+// Email regex — requires user@domain.tld format
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
+
+    // ── Validation ──────────────────────────────────────────────────
     if (!name || !email || !password)
       return res.status(400).json({ message: 'All fields required' });
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(400).json({ message: 'Email already in use' });
-    const user = new User({ name, email, password });
+
+    if (name.trim().length < 2)
+      return res.status(400).json({ message: 'Name must be at least 2 characters' });
+
+    if (!EMAIL_REGEX.test(email))
+      return res.status(400).json({ message: 'Please enter a valid email address (e.g. you@example.com)' });
+
+    if (password.length < 6)
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    // ────────────────────────────────────────────────────────────────
+
+    const exists = await User.findOne({ email: email.toLowerCase().trim() });
+    if (exists) return res.status(400).json({ message: 'An account with this email already exists' });
+
+    const user = new User({ name: name.trim(), email: email.toLowerCase().trim(), password });
     await user.save();
     const token = signToken(user._id);
     res.status(201).json({ token, user: user.toPublic() });
@@ -26,7 +43,16 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+
+    // ── Validation ──────────────────────────────────────────────────
+    if (!email || !password)
+      return res.status(400).json({ message: 'Email and password are required' });
+
+    if (!EMAIL_REGEX.test(email))
+      return res.status(400).json({ message: 'Please enter a valid email address' });
+    // ────────────────────────────────────────────────────────────────
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
@@ -47,6 +73,7 @@ router.put('/profile', auth, async (req, res) => {
   try {
     const { name } = req.body;
     if (!name?.trim()) return res.status(400).json({ message: 'Name required' });
+    if (name.trim().length < 2) return res.status(400).json({ message: 'Name must be at least 2 characters' });
     const user = await User.findByIdAndUpdate(req.userId, { name: name.trim() }, { new: true });
     res.json({ user: user.toPublic() });
   } catch (err) { res.status(500).json({ message: err.message }); }

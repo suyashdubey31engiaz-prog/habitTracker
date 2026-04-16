@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, CalendarDays, Grid3X3, BarChart3, Settings, Sparkles } from 'lucide-react';
+import { LayoutDashboard, CalendarDays, BarChart3, Settings, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useWeather } from '../context/WeatherContext';
@@ -10,9 +10,9 @@ import SyncBanner from './SyncBanner';
 const navItems = [
   { to:'/dashboard', icon:LayoutDashboard, label:'Today'  },
   { to:'/weekly',    icon:CalendarDays,    label:'Weekly' },
-  { to:'/analytics', icon:BarChart3,        label:'Stats'  },
-  { to:'/ai',        icon:Sparkles,         label:'AI'     },
-  { to:'/habits',    icon:Settings,         label:'Habits' },
+  { to:'/analytics', icon:BarChart3,       label:'Stats'  },
+  { to:'/ai',        icon:Sparkles,        label:'AI'     },
+  { to:'/habits',    icon:Settings,        label:'Habits' },
 ];
 
 function SeasonParticles({ themeKey }) {
@@ -91,22 +91,24 @@ function WeatherChip() {
 }
 
 export default function Layout({ children }) {
-  const { user }               = useAuth();
-  const { isNeon, themeKey }   = useTheme();
-  const navigate               = useNavigate();
-  const location               = useLocation();
-  const mainRef                = useRef(null);
+  const { user }             = useAuth();
+  const { isNeon, themeKey } = useTheme();
+  const navigate             = useNavigate();
+  const location             = useLocation();
+  const mainRef              = useRef(null);
 
   useEffect(() => {
     if (mainRef.current) {
       mainRef.current.classList.remove('page-enter');
       void mainRef.current.offsetWidth;
       mainRef.current.classList.add('page-enter');
+      // Scroll back to top on every page change
+      mainRef.current.scrollTop = 0;
     }
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen" style={{ background:'var(--bg)' }}>
+    <div style={{ background:'var(--bg)', minHeight:'100vh', display:'flex', flexDirection:'column' }}>
       <SeasonParticles themeKey={themeKey} />
 
       {/* Header */}
@@ -129,7 +131,6 @@ export default function Layout({ children }) {
 
         <div className="flex items-center gap-2">
           <WeatherChip />
-          {/* About link */}
           <button onClick={() => navigate('/about')}
             style={{
               width:34, height:34, borderRadius:10, background:'var(--surface2)',
@@ -138,7 +139,6 @@ export default function Layout({ children }) {
             }} title="About you">
             ❤️
           </button>
-          {/* Avatar → profile */}
           <button onClick={() => navigate('/profile')}
             style={{
               width:34, height:34, borderRadius:10,
@@ -155,15 +155,36 @@ export default function Layout({ children }) {
 
       <SyncBanner />
 
-      <main ref={mainRef} className="pb-nav">{children}</main>
+      {/*
+        FIX: overflowY:'auto' + WebkitOverflowScrolling makes this the
+        scroll container instead of the window. This prevents fixed-position
+        weather canvas elements from blocking touch scroll on mobile.
+        The canvas elements themselves get touch-action:pan-y in index.css.
+      */}
+      <main
+        ref={mainRef}
+        className="pb-nav"
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        {children}
+      </main>
 
       {/* Bottom nav */}
-      <nav className="fixed bottom-nav left-0 right:0 z-40 flex items-stretch"
-           style={{
-             background:'var(--surface)', borderTop:`1px solid var(--border)`,
-             boxShadow: isNeon ? '0 -4px 20px rgba(0,255,136,0.15)' : '0 -4px 20px rgba(0,0,0,0.1)',
-             height:64, left:0, right:0, position:'fixed',
-           }}>
+      <nav style={{
+            position:'fixed', bottom:0, left:0, right:0, zIndex:40,
+            display:'flex', alignItems:'stretch',
+            background:'var(--surface)', borderTop:`1px solid var(--border)`,
+            boxShadow: isNeon ? '0 -4px 20px rgba(0,255,136,0.15)' : '0 -4px 20px rgba(0,0,0,0.1)',
+            height:64,
+            paddingBottom:'env(safe-area-inset-bottom)',
+          }}>
         {navItems.map(({ to, icon:Icon, label }) => (
           <NavLink key={to} to={to}
             className="flex-1 flex flex-col items-center justify-center gap-0.5"

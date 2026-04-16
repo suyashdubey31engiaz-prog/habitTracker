@@ -4,6 +4,9 @@ import { Leaf, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 
+// Requires user@domain.tld — rejects a@b, a@b.c, etc.
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
@@ -15,23 +18,48 @@ export default function Auth() {
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
+  const validate = () => {
+    if (!isLogin && form.name.trim().length < 2)
+      return 'Name must be at least 2 characters';
+    if (!form.email.trim())
+      return 'Email address is required';
+    if (!EMAIL_REGEX.test(form.email.trim()))
+      return 'Please enter a valid email address (e.g. you@example.com)';
+    if (form.password.length < 6)
+      return 'Password must be at least 6 characters';
+    return null;
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
     setError('');
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setLoading(true);
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
       const payload = isLogin
-        ? { email: form.email, password: form.password }
-        : { name: form.name, email: form.email, password: form.password };
+        ? { email: form.email.trim().toLowerCase(), password: form.password }
+        : { name: form.name.trim(), email: form.email.trim().toLowerCase(), password: form.password };
       const { data } = await api.post(endpoint, payload);
       login(data.token, data.user);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong');
+      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const switchMode = () => {
+    setIsLogin(!isLogin);
+    setError('');
+    setForm({ name: '', email: '', password: '' });
   };
 
   return (
@@ -118,7 +146,7 @@ export default function Auth() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             {!isLogin && (
               <div>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -131,7 +159,7 @@ export default function Auth() {
                   placeholder="e.g. Suyash"
                   value={form.name}
                   onChange={handleChange}
-                  required={!isLogin}
+                  autoComplete="name"
                 />
               </div>
             )}
@@ -146,7 +174,8 @@ export default function Auth() {
                 placeholder="you@example.com"
                 value={form.email}
                 onChange={handleChange}
-                required
+                autoComplete={isLogin ? 'email' : 'new-email'}
+                inputMode="email"
               />
             </div>
             <div>
@@ -162,8 +191,7 @@ export default function Auth() {
                   placeholder={isLogin ? 'Your password' : 'Min 6 characters'}
                   value={form.password}
                   onChange={handleChange}
-                  required
-                  minLength={6}
+                  autoComplete={isLogin ? 'current-password' : 'new-password'}
                 />
                 <button
                   type="button"
@@ -195,7 +223,7 @@ export default function Auth() {
           <p className="mt-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
             {isLogin ? "Don't have an account? " : 'Already have an account? '}
             <button
-              onClick={() => { setIsLogin(!isLogin); setError(''); }}
+              onClick={switchMode}
               className="font-semibold hover:underline"
               style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer' }}
             >

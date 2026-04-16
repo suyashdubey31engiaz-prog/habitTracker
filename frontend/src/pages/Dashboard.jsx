@@ -161,7 +161,6 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Weather
   const { effect: weatherEffect, tempC, desc: weatherDesc } = useWeather();
   const weatherRecs = weatherEffect ? getWeatherRecommendations(weatherEffect, tempC) : [];
 
@@ -194,6 +193,7 @@ export default function Dashboard() {
       setLogs(logMap);
       setNotes(noteMap);
       setStats(statsRes.data);
+      // Only show onboarding if no habits AND never onboarded
       if (habitsRes.data.length === 0 && !localStorage.getItem('ht_onboarded')) {
         setShowOnboarding(true);
       }
@@ -237,10 +237,10 @@ export default function Dashboard() {
       ? '🎉 Perfect day! All done!'
       : `${remaining} habit${remaining !== 1 ? 's' : ''} to go`;
 
+  // ── FIX: dismiss onboarding, stay on dashboard — don't force navigate ──
   const handleOnboardingDone = () => {
     localStorage.setItem('ht_onboarded', '1');
     setShowOnboarding(false);
-    navigate('/habits');
   };
 
   if (showOnboarding) return <Onboarding onDone={handleOnboardingDone} />;
@@ -277,9 +277,9 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-3 flex-wrap">
             {[
-              { icon: '🔥', val: stats.currentStreak,     label: 'streak', bg: '#fff3e0' },
-              { icon: '🏆', val: stats.bestStreak,         label: 'best',   bg: '#fef9c3' },
-              { icon: '⚡', val: stats.totalCompletions,   label: 'total',  bg: 'var(--primary-pale)' },
+              { icon: '🔥', val: stats.currentStreak,   label: 'streak', bg: '#fff3e0' },
+              { icon: '🏆', val: stats.bestStreak,       label: 'best',   bg: '#fef9c3' },
+              { icon: '⚡', val: stats.totalCompletions, label: 'total',  bg: 'var(--primary-pale)' },
             ].map(({ icon, val, label, bg }) => (
               <div key={label} className="flex items-center gap-1.5">
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm" style={{ background: bg }}>
